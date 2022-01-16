@@ -32,7 +32,7 @@ def normalize_mel(wavspath):
     for wavpath in tqdm(wav_files, desc='Preprocess wav to mel'):
         wav_orig, _ = librosa.load(wavpath, sr=SAMPLING_RATE, mono=True)
         spec = vocoder(torch.tensor([wav_orig]))
-
+        print(f'Spectrogram shape: {spec.shape}')
         if spec.shape[-1] >= 64:    # training sample consists of 64 randomly cropped frames
             mel_list.append(spec.cpu().detach().numpy()[0])
 
@@ -87,11 +87,11 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--data_directory', type=str, default='vcc2018/vcc2018_training',
-                        help='Directory holding VCC2018 dataset.')
-    parser.add_argument('--preprocessed_data_directory', type=str, default='vcc2018_preprocessed/vcc2018_training',
-                        help='Directory holding preprocessed VCC2018 dataset.')
-    parser.add_argument('--speaker_ids', nargs='+', type=str, default=['VCC2SM3', 'VCC2TF1'],
+    parser.add_argument('--data_directory', type=str, default='/content/drive/MyDrive/NTU - Speech Augmentation/RATS_training_corpus',
+                        help='Directory holding dataset.')
+    parser.add_argument('--preprocessed_data_directory', type=str, default='/content/data_preprocessed/training',
+                        help='Directory holding preprocessed dataset.')
+    parser.add_argument('--speaker_ids', nargs='+', type=str, default=['trainA', 'trainB_chanA'],
                         help='Source speaker id from VCC2018.')
 
     args = parser.parse_args()
