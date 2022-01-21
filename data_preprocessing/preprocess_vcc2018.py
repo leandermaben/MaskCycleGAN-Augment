@@ -21,6 +21,9 @@ import torch.nn.functional as F
 from torch.utils.data.dataset import Dataset
 
 SAMPLING_RATE = 22050  # Fixed sampling rate
+DATA_DIRECTORY_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Noizeus'
+SPEAKER_IDS_DEFAULT = ['clean', '5dB']
+PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/data_preprocessed/training'
 
 
 def normalize_mel(wavspath):
@@ -87,11 +90,11 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process some integers.')
-    parser.add_argument('--data_directory', type=str, default='/content/drive/MyDrive/NTU - Speech Augmentation/RATS_training_corpus',
+    parser.add_argument('--data_directory', type=str, default=DATA_DIRECTORY_DEFAULT,
                         help='Directory holding dataset.')
-    parser.add_argument('--preprocessed_data_directory', type=str, default='/content/data_preprocessed/training',
+    parser.add_argument('--preprocessed_data_directory', type=str, default=PREPROCESSED_DATA_DIRECTORY_DEFAULT,
                         help='Directory holding preprocessed dataset.')
-    parser.add_argument('--speaker_ids', nargs='+', type=str, default=['trainA', 'trainB_chanA'],
+    parser.add_argument('--speaker_ids', nargs='+', type=str, default=SPEAKER_IDS_DEFAULT,
                         help='Source speaker id from VCC2018.')
 
     args = parser.parse_args()
