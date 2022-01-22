@@ -21,12 +21,13 @@ import torch.nn.functional as F
 from torch.utils.data.dataset import Dataset
 
 SAMPLING_RATE = 22050  # Fixed sampling rate
-DATA_DIRECTORY_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Noizeus'
-SPEAKER_IDS_DEFAULT = ['clean', '5dB']
+DATA_DIRECTORY_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Parallel_speech_data'
+SPEAKER_IDS_DEFAULT = ['clean', 'noisy']
 PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/data_preprocessed/training'
 
 
 def normalize_mel(wavspath):
+    duration = 0 # Keep track of duration of training set for the speaker
     wav_files = glob.glob(os.path.join(
         wavspath, '**', '*.wav'), recursive=True)  # source_path
     vocoder = torch.hub.load('descriptinc/melgan-neurips', 'load_melgan')
@@ -38,6 +39,9 @@ def normalize_mel(wavspath):
         print(f'Spectrogram shape: {spec.shape}')
         if spec.shape[-1] >= 64:    # training sample consists of 64 randomly cropped frames
             mel_list.append(spec.cpu().detach().numpy()[0])
+            duration+=librosa.get_duration(filename=wavpath)
+        else:
+            print(f'Not saving {wavpath} because frames less than 64.')
 
     mel_concatenated = np.concatenate(mel_list, axis=1)
     mel_mean = np.mean(mel_concatenated, axis=1, keepdims=True)
@@ -49,7 +53,7 @@ def normalize_mel(wavspath):
         app = (mel - mel_mean) / mel_std
         mel_normalized.append(app)
 
-    return mel_normalized, mel_mean, mel_std
+    return mel_normalized, mel_mean, mel_std, duration
 
 
 def save_pickle(variable, fileName):
@@ -73,7 +77,7 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
 
     print(f"Preprocessing data for speaker: {speaker_id}.")
 
-    mel_normalized, mel_mean, mel_std = normalize_mel(data_path)
+    mel_normalized, mel_mean, mel_std, duration = normalize_mel(data_path)
 
     if not os.path.exists(os.path.join(cache_folder, speaker_id)):
         os.makedirs(os.path.join(cache_folder, speaker_id))
@@ -86,6 +90,7 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
                 fileName=os.path.join(cache_folder, speaker_id, f"{speaker_id}_normalized.pickle"))
 
     print(f"Preprocessed and saved data for speaker: {speaker_id}.")
+    print(f"Total duration of dataset for {speaker_id} is {duration} seconds")
 
 
 if __name__ == '__main__':
