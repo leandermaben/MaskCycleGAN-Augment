@@ -23,7 +23,7 @@ from torch.utils.data.dataset import Dataset
 SAMPLING_RATE = 22050  # Fixed sampling rate
 DATA_DIRECTORY_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Parallel_speech_data'
 SPEAKER_IDS_DEFAULT = ['clean', 'noisy']
-PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/data_preprocessed/training'
+PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/MaskCycleGAN-VC/data_preprocessed/training'
 
 
 def normalize_mel(wavspath):
