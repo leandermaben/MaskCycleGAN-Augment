@@ -131,6 +131,7 @@ dmypy.json
 # Dataset
 vcc2018/
 vcc2018_preprocessed/
+dataset_preprocessed
 results/
 *.zip*
 *wget-log*
