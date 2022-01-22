@@ -28,8 +28,8 @@ PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/MaskCycleGAN-VC/data_preprocesse
 
 def normalize_mel(wavspath):
     info = {
-        records_count : 0, #Keep track of number of clips
-        duration : 0 # Keep track of duration of training set for the speaker
+        'records_count' : 0, #Keep track of number of clips
+        'duration' : 0 # Keep track of duration of training set for the speaker
     }
     wav_files = glob.glob(os.path.join(
         wavspath, '**', '*.wav'), recursive=True)  # source_path
@@ -39,11 +39,11 @@ def normalize_mel(wavspath):
     for wavpath in tqdm(wav_files, desc='Preprocess wav to mel'):
         wav_orig, _ = librosa.load(wavpath, sr=SAMPLING_RATE, mono=True)
         spec = vocoder(torch.tensor([wav_orig]))
-        print(f'Spectrogram shape: {spec.shape}')
+        #print(f'Spectrogram shape: {spec.shape}')
         if spec.shape[-1] >= 64:    # training sample consists of 64 randomly cropped frames
             mel_list.append(spec.cpu().detach().numpy()[0])
-            info.duration+=librosa.get_duration(filename=wavpath)
-            info.records_count+=1
+            info['duration']+=librosa.get_duration(filename=wavpath)
+            info['records_count']+=1
         else:
             print(f'Not saving {wavpath} because frames less than 64.')
 
@@ -94,8 +94,8 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
                 fileName=os.path.join(cache_folder, speaker_id, f"{speaker_id}_normalized.pickle"))
 
     print(f"Preprocessed and saved data for speaker: {speaker_id}.")
-    print(f"Total duration of dataset for {speaker_id} is {info.duration} seconds")
-    print(f"Total clips in dataset for {speaker_id} is {info.records_count} seconds")
+    print(f"Total duration of dataset for {speaker_id} is {info['duration']} seconds")
+    print(f"Total clips in dataset for {speaker_id} is {info['records_count']} seconds")
 
 
 if __name__ == '__main__':
