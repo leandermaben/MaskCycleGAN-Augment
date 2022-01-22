@@ -93,9 +93,11 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
     save_pickle(variable=mel_normalized,
                 fileName=os.path.join(cache_folder, speaker_id, f"{speaker_id}_normalized.pickle"))
 
+    print('#'*25)
     print(f"Preprocessed and saved data for speaker: {speaker_id}.")
     print(f"Total duration of dataset for {speaker_id} is {info['duration']} seconds")
-    print(f"Total clips in dataset for {speaker_id} is {info['records_count']} seconds")
+    print(f"Total clips in dataset for {speaker_id} is {info['records_count']}")
+    print('#'*25)
 
 
 if __name__ == '__main__':

@@ -50,7 +50,7 @@ class VCDataset(Dataset):
             end_A = start_A + n_frames
             mask_size_A = np.random.randint(0, self.max_mask_len)
             assert n_frames > mask_size_A
-            mask_start_A = np.random.randint(0, n_frames - mask_size_A)
+            mask_start_A = np.random.randint(0, n_frames - mask_size_A) # Why not +1?
             mask_A = np.ones_like(data_A[:, start_A:end_A])
             mask_A[:, mask_start_A:mask_start_A + mask_size_A] = 0.
             train_data_A.append(data_A[:, start_A:end_A])
