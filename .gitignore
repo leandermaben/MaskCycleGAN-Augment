@@ -137,3 +137,8 @@ results/
 *wget-log*
 
 .vscode
+
+
+#Evaluation
+
+evaluate/temp_cache
