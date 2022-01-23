@@ -20,8 +20,6 @@ def main(args):
     source_agg_processed_path = os.path.join(args.eval_cache,'agg',source_id)
     target_agg_processed_path = os.path.join(args.eval_cache,'agg',target_id)
 
-    os.makedirs(source_orig_data_path)
-    os.makedirs(target_orig_data_path)
     os.makedirs(os.path.join(args.eval_cache,'converted_audio','real'),exist_ok=True)
 
     #Preprocess all clips for aggregate statistics
@@ -33,7 +31,12 @@ def main(args):
 
     for source_file in os.listdir(os.path.join(args.data_directory,source_id)):
 
+        ## TODO : Generalize filename
+
         target_file = source_file[:-(len(source_path_end))]+target_path_end
+
+        os.makedirs(source_orig_data_path)
+        os.makedirs(target_orig_data_path)
 
         # Verifying format
 

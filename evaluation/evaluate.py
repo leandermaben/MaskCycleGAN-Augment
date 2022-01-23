@@ -13,7 +13,7 @@ import os
 import shutil
 #from timeit import default_timer as timer
 
-PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/MaskCycleGAN-VC/data_preprocessed/training'
+DATA_DIRECTORY_DEFAULT = '/content/MaskCycleGAN-VC/evaluation/temp_cache/converted_audio'
 
 def calc_LSD_spectrogram(a, b):
     """
@@ -213,26 +213,23 @@ def norm_and_LSD(file1, file2):
 def main():
 
     argument_parser = argparse.ArgumentParser(description='Evaluate LSD score')
-    argument_parser.add_argument('--preprocessed_data_dir', type='str', default=PREPROCESSED_DATA_DIRECTORY_DEFAULT, 
+    argument_parser.add_argument('--data_directory', type=str, default=DATA_DIRECTORY_DEFAULT, 
                                                                             help='Directory containing preprocessed data for evaluation.')
-    argument_parser.add_argument('--speaker_A_id', type='str', default='clean', 
+    argument_parser.add_argument('--speaker_A_id', type=str, default='real', 
                                                                             help='Speaker A ID')
-    argument_parser.add_argument('--speaker_B_id', type='str', default='noisy', 
+    argument_parser.add_argument('--speaker_B_id', type=str, default='generated', 
                                                                             help='Speaker B ID')
 
     args = argument_parser.parse_args()
 
-    for file in os.listdir(os.path.join(args.preprocessed_data_dir,speaker_A_id)):
+    norm_tot=0
+    count=0
 
-
-    os.system()
-    #add your files
-    file2 = "fe_03_1285-01269-A-050261-050912-src_fakegen.wav"
-    file1 = "fe_03_1285-01269-A-050261-050912-A_8k - GT.wav"
-
-    #normalize and calculate LSD
-    # File2 always the one to be normalized to match File1
-    norm_and_LSD(file1, file2)
+    for file in os.listdir(os.path.join(args.data_directory,args.speaker_A_id)):
+        norm_tot+=norm_and_LSD(os.path.join(args.data_directory,args.speaker_A_id,file), os.path.join(args.data_directory,args.speaker_B_id,file))
+        count+=1
+    
+    print(f'LSD score is {norm_tot/count}')
     return
 
 if __name__ == "__main__":
