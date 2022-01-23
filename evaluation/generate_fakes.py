@@ -53,7 +53,9 @@ def main(args):
         
         # Run inference
         args.eval = True
-        args.intermediate_audio_path = os.path.join(args.temporary_cache,'converted_audio')
+        args.eval_save_path = os.path.join(args.temporary_cache,'converted_audio','generated')
+        args.filename = file
+        args.preprocessed_data_dir = os.path.join(args.temporary_cache,'processed')
         tester = MaskCycleGANVCTesting(args)
         tester.test()
 

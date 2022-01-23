@@ -26,11 +26,16 @@ class MaskCycleGANVCTesting(object):
         """
         # Store Args
         self.device = args.device
+        
         if hasattr(args,'eval') and args.eval:
-            self.converted_audio_dir = os.path.join(args.intermediate_audio_path)
+            self.eval=True
+            os.makedirs(args.eval_save_dir, exist_ok=True)
+            self.eval_save_path = os.path.join(args.eval_save_dir,args.filename)
         else:
+            self.eval=False
             self.converted_audio_dir = os.path.join(args.save_dir, args.name, 'converted_audio')
-        os.makedirs(self.converted_audio_dir, exist_ok=True)
+            os.makedirs(self.converted_audio_dir, exist_ok=True)
+
         self.model_name = args.model_name
 
         self.speaker_A_id = args.speaker_A_id
@@ -99,11 +104,15 @@ class MaskCycleGANVCTesting(object):
 
                 wav_real_A = decode_melspectrogram(self.vocoder, real_A[0].detach(
                 ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
-                save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_A_id}_to_{self.speaker_B_id}.wav")
-                save_path_orig = os.path.join(self.converted_audio_dir,
+                
+                if self.eval:
+                    torchaudio.save(self.eval_save_path, wav_fake_B, sample_rate=self.sample_rate)
+                else:
+                    save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_A_id}_to_{self.speaker_B_id}.wav")
+                    save_path_orig = os.path.join(self.converted_audio_dir,
                                          f"{i}-original_{self.speaker_A_id}_to_{self.speaker_B_id}.wav")
-                torchaudio.save(save_path, wav_fake_B, sample_rate=self.sample_rate)
-                torchaudio.save(save_path_orig, wav_real_A, sample_rate=self.sample_rate)
+                    torchaudio.save(save_path, wav_fake_B, sample_rate=self.sample_rate)
+                    torchaudio.save(save_path_orig, wav_real_A, sample_rate=self.sample_rate)
             else:
                 real_B = sample
                 real_B = real_B.to(self.device, dtype=torch.float)
@@ -114,12 +123,16 @@ class MaskCycleGANVCTesting(object):
 
                 wav_real_B = decode_melspectrogram(self.vocoder, real_B[0].detach(
                 ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
-
-                save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_B_id}_to_{self.speaker_A_id}.wav")
-                save_path_orig = os.path.join(self.converted_audio_dir,
+                
+                if self.eval:
+                    torchaudio.save(self.eval_save_path, wav_fake_A, sample_rate=self.sample_rate)
+                    
+                else:
+                    save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_B_id}_to_{self.speaker_A_id}.wav")
+                    save_path_orig = os.path.join(self.converted_audio_dir,
                                          f"{i}-original_{self.speaker_B_id}_to_{self.speaker_A_id}.wav")
-                torchaudio.save(save_path, wav_fake_A, sample_rate=self.sample_rate)
-                torchaudio.save(save_path_orig, wav_real_B, sample_rate=self.sample_rate)
+                    torchaudio.save(save_path, wav_fake_A, sample_rate=self.sample_rate)
+                    torchaudio.save(save_path_orig, wav_real_B, sample_rate=self.sample_rate)
 
 
 if __name__ == "__main__":
