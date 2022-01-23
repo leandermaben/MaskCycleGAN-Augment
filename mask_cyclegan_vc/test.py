@@ -26,7 +26,10 @@ class MaskCycleGANVCTesting(object):
         """
         # Store Args
         self.device = args.device
-        self.converted_audio_dir = os.path.join(args.save_dir, args.name, 'converted_audio')
+        if hasattr(args,'eval') and args.eval:
+            self.converted_audio_dir = os.path.join(args.intermediate_audio_path)
+        else:
+            self.converted_audio_dir = os.path.join(args.save_dir, args.name, 'converted_audio')
         os.makedirs(self.converted_audio_dir, exist_ok=True)
         self.model_name = args.model_name
 
