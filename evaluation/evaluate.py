@@ -8,8 +8,12 @@ from scipy import signal
 from pydub import AudioSegment
 import math
 import random
+import argparse
+import os
+import shutil
 #from timeit import default_timer as timer
 
+PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/MaskCycleGAN-VC/data_preprocessed/training'
 
 def calc_LSD_spectrogram(a, b):
     """
@@ -207,6 +211,21 @@ def norm_and_LSD(file1, file2):
     return
 
 def main():
+
+    argument_parser = argparse.ArgumentParser(description='Evaluate LSD score')
+    argument_parser.add_argument('--preprocessed_data_dir', type='str', default=PREPROCESSED_DATA_DIRECTORY_DEFAULT, 
+                                                                            help='Directory containing preprocessed data for evaluation.')
+    argument_parser.add_argument('--speaker_A_id', type='str', default='clean', 
+                                                                            help='Speaker A ID')
+    argument_parser.add_argument('--speaker_B_id', type='str', default='noisy', 
+                                                                            help='Speaker B ID')
+
+    args = argument_parser.parse_args()
+
+    for file in os.listdir(os.path.join(args.preprocessed_data_dir,speaker_A_id)):
+
+
+    os.system()
     #add your files
     file2 = "fe_03_1285-01269-A-050261-050912-src_fakegen.wav"
     file1 = "fe_03_1285-01269-A-050261-050912-A_8k - GT.wav"
