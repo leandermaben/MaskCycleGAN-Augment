@@ -7,6 +7,10 @@ import torch.nn.functional as F
 
 
 def DiffAugment(x, policy='', channels_first=True):
+
+    #x has shape [batch_size,num_features,frames]
+    #Func expects [batch_size,channels,num_features,frames]
+    x = x.unsqueeze(1)
     if policy:
         if not channels_first:
             x = x.permute(0, 3, 1, 2)
@@ -16,6 +20,7 @@ def DiffAugment(x, policy='', channels_first=True):
         if not channels_first:
             x = x.permute(0, 2, 3, 1)
         x = x.contiguous()
+    x=x.squeeze(1)
     return x
 
 
@@ -74,3 +79,8 @@ AUGMENT_FNS = {
     'translation': [rand_translation],
     'cutout': [rand_cutout],
 }
+
+if __name__ == '__main__':
+    imgs = torch.rand(32,1,256,256)
+    aug = DiffAugment(imgs,policy = 'color,translation,cutout')
+    print(aug.numpy().shape)

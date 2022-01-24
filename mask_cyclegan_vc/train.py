@@ -17,7 +17,7 @@ from dataset.vc_dataset import VCDataset
 from mask_cyclegan_vc.utils import decode_melspectrogram, get_mel_spectrogram_fig
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
-from DiffAugment_pythorch import DiffAugment
+from mask_cyclegan_vc.DiffAugment_pythorch import DiffAugment
 
 class MaskCycleGANVCTraining(object):
     """Trainer for MaskCycleGAN-VC
@@ -209,6 +209,8 @@ class MaskCycleGANVCTraining(object):
                         real_A, torch.ones_like(real_A))
                     identity_B = self.generator_A2B(
                         real_B, torch.ones_like(real_B))
+                    # print(f"{'*'*25} Shape of img {fake_A.cpu().detach().numpy().shape}")
+                    # print(f"{'*'*25} Shape of augmented image {DiffAugment(fake_A,policy=self.policy).cpu().detach().numpy().shape}")
                     d_fake_A = self.discriminator_A(DiffAugment(fake_A,policy=self.policy))
                     d_fake_B = self.discriminator_B(DiffAugment(fake_B,policy=self.policy))
 
