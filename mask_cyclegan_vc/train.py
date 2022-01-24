@@ -18,6 +18,7 @@ from mask_cyclegan_vc.utils import decode_melspectrogram, get_mel_spectrogram_fi
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
 from mask_cyclegan_vc.DiffAugment_pythorch import DiffAugment
+from mask_cyclegan_vc.patchNCE import patchNCE
 
 class MaskCycleGANVCTraining(object):
     """Trainer for MaskCycleGAN-VC
@@ -38,6 +39,7 @@ class MaskCycleGANVCTraining(object):
         self.mini_batch_size = args.batch_size
         self.cycle_loss_lambda = args.cycle_loss_lambda
         self.identity_loss_lambda = args.identity_loss_lambda
+        self.patch_loss_lambda = 10 #Add to arg parser
         self.device = args.device
         self.epochs_per_save = args.epochs_per_save
         self.epochs_per_plot = args.epochs_per_plot
@@ -234,10 +236,15 @@ class MaskCycleGANVCTraining(object):
                     generator_loss_A2B_2nd = torch.mean((1 - d_fake_cycle_B) ** 2)
                     generator_loss_B2A_2nd = torch.mean((1 - d_fake_cycle_A) ** 2)
 
+                    #PatchNCE Loss
+                    patch_loss_A2B = patchNCE(real_A,fakeB,self.generator_A2B)
+                    patch_loss_B2A = patchNCE(real_B,fake_A,self.generator_B2A)
+
                     # Total Generator Loss
                     g_loss = g_loss_A2B + g_loss_B2A + \
                         generator_loss_A2B_2nd + generator_loss_B2A_2nd + \
-                        self.cycle_loss_lambda * cycleLoss + self.identity_loss_lambda * identityLoss
+                        self.cycle_loss_lambda * cycleLoss + self.identity_loss_lambda * identityLoss +\
+                        self.patch_loss_lambda * (patch_loss_A2B+patch_loss_B2A)/2
 
                     # Backprop for Generator
                     self.reset_grad()
