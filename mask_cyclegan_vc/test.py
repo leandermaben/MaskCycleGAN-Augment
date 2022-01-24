@@ -106,7 +106,7 @@ class MaskCycleGANVCTesting(object):
                 ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
                 
                 if self.eval:
-                    torchaudio.save(self.eval_save_path, wav_fake_B, sample_rate=self.sample_rate)
+                    torchaudio.save(self.eval_save_path, wav_fake_B, sample_rate=self.sample_rate, bits_per_sample=16)
                 else:
                     save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_A_id}_to_{self.speaker_B_id}.wav")
                     save_path_orig = os.path.join(self.converted_audio_dir,
@@ -125,7 +125,7 @@ class MaskCycleGANVCTesting(object):
                 ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
                 
                 if self.eval:
-                    torchaudio.save(self.eval_save_path, wav_fake_A, sample_rate=self.sample_rate)
+                    torchaudio.save(self.eval_save_path, wav_fake_A, sample_rate=self.sample_rate, bits_per_sample=16)
                     
                 else:
                     save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_B_id}_to_{self.speaker_A_id}.wav")

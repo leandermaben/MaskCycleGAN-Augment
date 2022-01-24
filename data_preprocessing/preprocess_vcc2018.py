@@ -26,10 +26,11 @@ SPEAKER_IDS_DEFAULT = ['clean', 'noisy']
 PREPROCESSED_DATA_DIRECTORY_DEFAULT = '/content/MaskCycleGAN-VC/data_preprocessed/training'
 
 
-def normalize_mel(wavspath):
+def normalize_mel(wavspath,eval = False):
     info = {
         'records_count' : 0, #Keep track of number of clips
-        'duration' : 0 # Keep track of duration of training set for the speaker
+        'duration' : 0, # Keep track of duration of training set for the speaker
+        'success': True #To check for minimum frames during evaluation
     }
     wav_files = glob.glob(os.path.join(
         wavspath, '**', '*.wav'), recursive=True)  # source_path
@@ -46,6 +47,9 @@ def normalize_mel(wavspath):
             info['records_count']+=1
         else:
             print(f'Not saving {wavpath} because frames less than 64.')
+            if eval:
+                info['success'] = False
+                return None,None,None,info          
 
     mel_concatenated = np.concatenate(mel_list, axis=1)
     mel_mean = np.mean(mel_concatenated, axis=1, keepdims=True)
@@ -70,7 +74,7 @@ def load_pickle_file(fileName):
         return pickle.load(f)
 
 
-def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
+def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/',eval=False):
     """Preprocesses dataset of .wav files by converting to Mel-spectrograms.
 
     Args:
@@ -81,23 +85,28 @@ def preprocess_dataset(data_path, speaker_id, cache_folder='./cache/'):
 
     print(f"Preprocessing data for speaker: {speaker_id}.")
 
-    mel_normalized, mel_mean, mel_std, info = normalize_mel(data_path)
+    mel_normalized, mel_mean, mel_std, info = normalize_mel(data_path,eval)
 
-    if not os.path.exists(os.path.join(cache_folder, speaker_id)):
-        os.makedirs(os.path.join(cache_folder, speaker_id))
+    if info['success']: #If it is not in eval mode or eval mode with a valid audio clip
 
-    np.savez(os.path.join(cache_folder, speaker_id, f"{speaker_id}_norm_stat.npz"),
-             mean=mel_mean,
-             std=mel_std)
+        if not os.path.exists(os.path.join(cache_folder, speaker_id)):
+            os.makedirs(os.path.join(cache_folder, speaker_id))
 
-    save_pickle(variable=mel_normalized,
-                fileName=os.path.join(cache_folder, speaker_id, f"{speaker_id}_normalized.pickle"))
+        np.savez(os.path.join(cache_folder, speaker_id, f"{speaker_id}_norm_stat.npz"),
+                mean=mel_mean,
+                std=mel_std)
 
-    print('#'*25)
-    print(f"Preprocessed and saved data for speaker: {speaker_id}.")
-    print(f"Total duration of dataset for {speaker_id} is {info['duration']} seconds")
-    print(f"Total clips in dataset for {speaker_id} is {info['records_count']}")
-    print('#'*25)
+        save_pickle(variable=mel_normalized,
+                    fileName=os.path.join(cache_folder, speaker_id, f"{speaker_id}_normalized.pickle"))
+
+        print('#'*25)
+        print(f"Preprocessed and saved data for speaker: {speaker_id}.")
+        print(f"Total duration of dataset for {speaker_id} is {info['duration']} seconds")
+        print(f"Total clips in dataset for {speaker_id} is {info['records_count']}")
+        print('#'*25)
+
+    if eval:
+        return info['success']
 
 
 if __name__ == '__main__':

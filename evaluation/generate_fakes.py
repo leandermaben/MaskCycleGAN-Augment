@@ -29,6 +29,9 @@ def main(args):
                             cache_folder=os.path.join(args.eval_cache,'agg'))
             os.remove(os.path.join(args.eval_cache,'agg',speaker_id,f'{speaker_id}_normalized.pickle'))
 
+    count = 0
+    total = len(os.listdir(os.path.join(args.data_directory,source_id)))
+
     for source_file in os.listdir(os.path.join(args.data_directory,source_id)):
 
         ## TODO : Generalize filename
@@ -52,11 +55,21 @@ def main(args):
         #Preprocess Data
 
         for speaker_id in [source_id,target_id]:
-            preprocess_dataset(data_path=os.path.join(args.eval_cache,'orig',speaker_id),
-                                    speaker_id=speaker_id,cache_folder=os.path.join(args.eval_cache,'processed'))
-            os.remove(os.path.join(args.eval_cache,'processed',speaker_id,f'{speaker_id}_norm_stat.npz')) #Removing individual stats
-            shutil.copyfile(os.path.join(args.eval_cache,'agg',speaker_id,f'{speaker_id}_norm_stat.npz'),\
-                                    os.path.join(args.eval_cache,'processed',speaker_id,f'{speaker_id}_norm_stat.npz')) #Copying aggregated stats
+            stat = preprocess_dataset(data_path=os.path.join(args.eval_cache,'orig',speaker_id),
+                                    speaker_id=speaker_id,cache_folder=os.path.join(args.eval_cache,'processed'),eval=True)
+            if stat:
+                os.remove(os.path.join(args.eval_cache,'processed',speaker_id,f'{speaker_id}_norm_stat.npz')) #Removing individual stats
+                shutil.copyfile(os.path.join(args.eval_cache,'agg',speaker_id,f'{speaker_id}_norm_stat.npz'),\
+                                        os.path.join(args.eval_cache,'processed',speaker_id,f'{speaker_id}_norm_stat.npz')) #Copying aggregated stats
+            else:
+                break
+        
+        if not stat:
+            shutil.rmtree(source_orig_data_path)
+            shutil.rmtree(target_orig_data_path)
+            continue
+
+
         
         # Run inference
         args.eval = True
@@ -68,7 +81,7 @@ def main(args):
 
         #Copy original target file to Real folder with given sample_rate
         real , sr = librosa.load(os.path.join(target_orig_data_path,target_file))
-        sf.write(os.path.join(args.eval_cache,'converted_audio','real',source_file[:-(len(source_path_end)+1)]+'.wav'), real, 22050, 'PCM_24')
+        sf.write(os.path.join(args.eval_cache,'converted_audio','real',source_file[:-(len(source_path_end)+1)]+'.wav'), real, args.sample_rate, 'PCM_16')
        
         
         #Deleting Processed and Orig Directories
@@ -76,6 +89,10 @@ def main(args):
         shutil.rmtree(target_orig_data_path)
         shutil.rmtree(source_processed_data_path)
         shutil.rmtree(target_processed_data_path)
+
+        count+=1
+
+        print(f"{'-'*10} Processed {count}/{total} {'-'*10}")
         
 
 if __name__ == "__main__":

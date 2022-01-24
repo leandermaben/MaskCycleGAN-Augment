@@ -141,10 +141,15 @@ def normalize(sig1, sig2):
         elif(data.dtype == 'int32'):
             bits_per_sample = 32
 
+        print(f'Data type: {data.dtype}')
+
         return rate, bits_per_sample
 
     sample_rate1, bits_per_sample_sig1 = get_mediainfo(sig1)
     sample_rate2, bits_per_sample_sig2 = get_mediainfo(sig2)
+
+    print(f'Bits per sample 1 : {bits_per_sample_sig1}')
+    print(f'Bits per sample 2 : {bits_per_sample_sig2}')
 
     ## bps and sample rate must match
     assert bits_per_sample_sig1 == bits_per_sample_sig2
@@ -179,6 +184,8 @@ def norm_and_LSD(file1, file2):
     #normalizing
     
     # lower energy of the two is matched
+    print(f'file1 : {file1}')
+    print(f'file2 : {file2}')
     _, aud_1 = wav.read(file1)
     _, aud_2 = wav.read(file2)
     if(np.sum(aud_1.astype(float)**2) > np.sum(aud_2.astype(float)**2)):
