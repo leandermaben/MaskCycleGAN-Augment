@@ -141,15 +141,11 @@ def normalize(sig1, sig2):
         elif(data.dtype == 'int32'):
             bits_per_sample = 32
 
-        print(f'Data type: {data.dtype}')
 
         return rate, bits_per_sample
 
     sample_rate1, bits_per_sample_sig1 = get_mediainfo(sig1)
     sample_rate2, bits_per_sample_sig2 = get_mediainfo(sig2)
-
-    print(f'Bits per sample 1 : {bits_per_sample_sig1}')
-    print(f'Bits per sample 2 : {bits_per_sample_sig2}')
 
     ## bps and sample rate must match
     assert bits_per_sample_sig1 == bits_per_sample_sig2
@@ -184,8 +180,6 @@ def norm_and_LSD(file1, file2):
     #normalizing
     
     # lower energy of the two is matched
-    print(f'file1 : {file1}')
-    print(f'file2 : {file2}')
     _, aud_1 = wav.read(file1)
     _, aud_2 = wav.read(file2)
     if(np.sum(aud_1.astype(float)**2) > np.sum(aud_2.astype(float)**2)):
@@ -214,8 +208,11 @@ def norm_and_LSD(file1, file2):
     a = torch.from_numpy(s1)
     b = torch.from_numpy(s2)
 
-    print("LSD (Spectrogram) between %s, %s = %f" % (file1, file2, calc_LSD_spectrogram(a, b)))
-    return
+    res = calc_LSD_spectrogram(a, b)
+
+    #print("LSD (Spectrogram) between %s, %s = %f" % (file1, file2, res))
+    
+    return res
 
 def main():
 
@@ -236,7 +233,7 @@ def main():
         norm_tot+=norm_and_LSD(os.path.join(args.data_directory,args.speaker_A_id,file), os.path.join(args.data_directory,args.speaker_B_id,file))
         count+=1
     
-    print(f'LSD score is {norm_tot/count}')
+    print(f'Mean LSD score is {norm_tot/count}')
     return
 
 if __name__ == "__main__":
