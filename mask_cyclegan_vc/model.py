@@ -278,6 +278,31 @@ class Generator(nn.Module):
         output = self.lastConvLayer(upsample_layer_2)
         output = output.squeeze(1)
         return output
+    
+    def intermediate_outputs(self,x):
+        mask = torch.ones_like(x)
+        x = torch.stack((x*mask, mask), dim=1)
+        conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))  # GLU
+
+        # Downsampling
+        downsample1 = self.downSample1(conv1)
+        downsample2 = self.downSample2(downsample1)
+
+        # Reshape
+        reshape2dto1d = downsample2.view(
+            downsample2.size(0), self.flattened_channels, 1, -1)
+        reshape2dto1d = reshape2dto1d.squeeze(2)
+
+        # 2D -> 1D
+        conv2dto1d_layer = self.conv2dto1dLayer(reshape2dto1d)
+        conv2dto1d_layer = self.conv2dto1dLayer_tfan(conv2dto1d_layer)
+
+        # Residual Blocks
+        residual_layer_1 = self.residualLayer1(conv2dto1d_layer)
+        residual_layer_2 = self.residualLayer2(residual_layer_1)
+        residual_layer_3 = self.residualLayer3(residual_layer_2)
+
+        return residual_layer_1,residual_layer_2,residual_layer_3
 
 
 class Discriminator(nn.Module):

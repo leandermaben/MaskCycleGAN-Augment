@@ -25,7 +25,7 @@ def main(args):
     #Preprocess all clips for aggregate statistics
     if not os.path.exists(os.path.join(args.eval_cache,'agg')):
         for speaker_id in [source_id,target_id]:
-            preprocess_dataset(data_path=args.data_directory, speaker_id=speaker_id,
+            preprocess_dataset(data_path=os.path.join(args.data_directory,speaker_id), speaker_id=speaker_id,
                             cache_folder=os.path.join(args.eval_cache,'agg'))
             os.remove(os.path.join(args.eval_cache,'agg',speaker_id,f'{speaker_id}_normalized.pickle'))
 
