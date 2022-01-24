@@ -17,7 +17,7 @@ from dataset.vc_dataset import VCDataset
 from mask_cyclegan_vc.utils import decode_melspectrogram, get_mel_spectrogram_fig
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
-
+from DiffAugment_pythorch import DiffAugment
 
 class MaskCycleGANVCTraining(object):
     """Trainer for MaskCycleGAN-VC
@@ -41,6 +41,7 @@ class MaskCycleGANVCTraining(object):
         self.device = args.device
         self.epochs_per_save = args.epochs_per_save
         self.epochs_per_plot = args.epochs_per_plot
+        self.policy = 'color,translation,cutout' #Policy for diffAugment
 
         # Initialize MelGAN-Vocoder used to decode Mel-spectrograms
         self.vocoder = torch.hub.load(
@@ -208,12 +209,12 @@ class MaskCycleGANVCTraining(object):
                         real_A, torch.ones_like(real_A))
                     identity_B = self.generator_A2B(
                         real_B, torch.ones_like(real_B))
-                    d_fake_A = self.discriminator_A(fake_A)
-                    d_fake_B = self.discriminator_B(fake_B)
+                    d_fake_A = self.discriminator_A(DiffAugment(fake_A,policy=self.policy))
+                    d_fake_B = self.discriminator_B(DiffAugment(fake_B,policy=self.policy))
 
                     # For Two Step Adverserial Loss
-                    d_fake_cycle_A = self.discriminator_A2(cycle_A)
-                    d_fake_cycle_B = self.discriminator_B2(cycle_B)
+                    d_fake_cycle_A = self.discriminator_A2(DiffAugment(cycle_A,policy=self.policy))
+                    d_fake_cycle_B = self.discriminator_B2(DiffAugment(cycle_B,policy=self.policy))
 
                     # Generator Cycle Loss
                     cycleLoss = torch.mean(
@@ -252,25 +253,25 @@ class MaskCycleGANVCTraining(object):
                     self.discriminator_B2.train()
 
                     # Discriminator Feed Forward
-                    d_real_A = self.discriminator_A(real_A)
-                    d_real_B = self.discriminator_B(real_B)
-                    d_real_A2 = self.discriminator_A2(real_A)
-                    d_real_B2 = self.discriminator_B2(real_B)
+                    d_real_A = self.discriminator_A(DiffAugment(real_A ,policy=self.policy))
+                    d_real_B = self.discriminator_B(DiffAugment(real_B ,policy=self.policy))
+                    d_real_A2 = self.discriminator_A2(DiffAugment(real_A ,policy=self.policy))
+                    d_real_B2 = self.discriminator_B2(DiffAugment(real_B ,policy=self.policy))
                     generated_A = self.generator_B2A(real_B, mask_B)
-                    d_fake_A = self.discriminator_A(generated_A)
+                    d_fake_A = self.discriminator_A(DiffAugment(generated_A ,policy=self.policy))
 
                     # For Two Step Adverserial Loss A->B
                     cycled_B = self.generator_A2B(
                         generated_A, torch.ones_like(generated_A))
-                    d_cycled_B = self.discriminator_B2(cycled_B)
+                    d_cycled_B = self.discriminator_B2(DiffAugment(cycled_B ,policy=self.policy))
 
                     generated_B = self.generator_A2B(real_A, mask_A)
-                    d_fake_B = self.discriminator_B(generated_B)
+                    d_fake_B = self.discriminator_B(DiffAugment(generated_B ,policy=self.policy))
 
                     # For Two Step Adverserial Loss B->A
                     cycled_A = self.generator_B2A(
                         generated_B, torch.ones_like(generated_B))
-                    d_cycled_A = self.discriminator_A2(cycled_A)
+                    d_cycled_A = self.discriminator_A2(DiffAugment(cycled_A ,policy=self.policy))
 
                     # Loss Functions
                     d_loss_A_real = torch.mean((1 - d_real_A) ** 2)
