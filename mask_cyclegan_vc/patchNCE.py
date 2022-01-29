@@ -9,7 +9,7 @@ def patchNCE(inp,out,generator):
     for layer_in,layer_out in zip(layers_in,layers_out):
         layer_in = F.normalize(layer_in,dim=1)
         layer_out = F.normalize(layer_out,dim=1)
-        dot_matrix = torch.exp(torch.bmm(torch.transpose(layer_in,1,2),layer_out))
+        dot_matrix = torch.exp(torch.bmm(torch.transpose(layer_out,1,2),layer_in))
         positive_diagonal = torch.eye(dot_matrix.size(1),device=dot_matrix.device).unsqueeze(0)*dot_matrix
         positive_scores = torch.sum(positive_diagonal,dim=2)
         overall_scores = torch.sum(dot_matrix,dim=2)
