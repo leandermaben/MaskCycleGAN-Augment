@@ -47,5 +47,11 @@ class CycleGANTrainArgParser(TrainArgParser):
         self.parser.add_argument(
             '--max_mask_len', type=int, default=32, help='Maximum length of mask for Mask-CycleGAN-VC.'
         )
+        self.parser.add_argument(
+            '--diff_aug', type=bool, default=True, help="Use Differentiable Augmentation during training?"
+        )
+        self.parser.add_argument(
+            '--patchNCELoss', type=bool, default=False, help='Use patchNCE Loss during training'
+        )
 
         self.parser.set_defaults(batch_size=1, num_epochs=50, decay_after=1e4, start_epoch=1, steps_per_print=100, num_frames=64)

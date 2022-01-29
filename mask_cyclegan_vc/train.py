@@ -44,8 +44,8 @@ class MaskCycleGANVCTraining(object):
         self.epochs_per_save = args.epochs_per_save
         self.epochs_per_plot = args.epochs_per_plot
         self.policy = 'color,translation,cutout' #Policy for diffAugment
-        self.patchNCE = False
-        self.diff_aug = True
+        self.patchNCE = args.PatchNCELoss
+        self.diff_aug = args.diff_aug
 
         # Initialize MelGAN-Vocoder used to decode Mel-spectrograms
         self.vocoder = torch.hub.load(
