@@ -9,7 +9,7 @@ import cv2
 import librosa
 import pickle
 import matplotlib.pyplot as plt
-from util.util import save_pickle
+
 
 AUDIO_DATA_PATH_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Parallel_speech_data'
 SUBDIRECTORIES_DEFAULT = ['clean','noisy']

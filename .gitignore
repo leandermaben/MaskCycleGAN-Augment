@@ -136,7 +136,7 @@ results/
 *.zip*
 *wget-log*
 .vscode
-
+data_cache
 
 #Evaluation
 
