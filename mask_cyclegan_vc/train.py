@@ -13,7 +13,7 @@ import torch.utils.data as data
 
 from mask_cyclegan_vc.model import Generator, Discriminator
 from args.cycleGAN_train_arg_parser import CycleGANTrainArgParser
-from dataset.vc_dataset import VCDataset
+from dataset.noise_dataset import NoiseDataset
 from mask_cyclegan_vc.utils import decode_melspectrogram, get_mel_spectrogram_fig
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
@@ -80,25 +80,18 @@ class MaskCycleGANVCTraining(object):
 
         # Initialize Train Dataloader
         self.num_frames = args.num_frames
-        self.dataset = VCDataset(datasetA=self.dataset_A,
-                                 datasetB=self.dataset_B,
-                                 n_frames=args.num_frames,
-                                 max_mask_len=args.max_mask_len)
+        self.dataset = NoiseDataset(args)
         self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
                                                             batch_size=self.mini_batch_size,
                                                             shuffle=True,
                                                             drop_last=False)
 
         # Initialize Validation Dataloader (used to generate intermediate outputs)
-        self.validation_dataset = VCDataset(datasetA=self.dataset_A,
-                                            datasetB=self.dataset_B,
-                                            n_frames=args.num_frames_validation,
-                                            max_mask_len=args.max_mask_len,
-                                            valid=True)
-        self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
-                                                                 batch_size=1,
-                                                                 shuffle=False,
-                                                                 drop_last=False)
+        # self.validation_dataset = NoiseDataset(args)
+        # self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
+        #                                                          batch_size=1,
+        #                                                          shuffle=False,
+        #                                                          drop_last=False)
 
         # Initialize logger and saver objects
         self.logger = TrainLogger(args, len(self.train_dataloader.dataset))
@@ -183,7 +176,13 @@ class MaskCycleGANVCTraining(object):
         for epoch in range(self.start_epoch, self.num_epochs + 1):
             self.logger.start_epoch()
 
-            for i, (real_A, mask_A, real_B, mask_B) in enumerate(tqdm(self.train_dataloader)):
+            for i, data_point in enumerate(tqdm(self.train_dataloader)):
+                
+                real_A = data_point['A']
+                mask_A = data_point['A_mask']
+                real_B = data_point['B']
+                mask_K = data_point['B_mask']
+
                 self.logger.start_iter()
                 num_iterations = (
                     self.n_samples // self.mini_batch_size) * epoch + i

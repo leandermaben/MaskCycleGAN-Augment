@@ -24,3 +24,4 @@ class CycleGANTestArgParser(BaseArgParser):
             '--ckpt_dir', type=str, default=None, help='Path to model ckpt.')
         self.parser.add_argument(
             '--model_name', type=str, choices=('generator_A2B', 'generator_B2A'), default='generator_A2B', help='Name of model to load.')
+        self.parser.set_defaults(data_load_order='aligned')

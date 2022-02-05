@@ -9,6 +9,8 @@ import torch
 import numpy as np
 import random
 
+DATAROOT_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache'
+SPLIT_DEFAULT = 'train'
 
 class BaseArgParser(object):
     """
@@ -53,6 +55,14 @@ class BaseArgParser(object):
             '--start_epoch', type=int, default=1, help='Epoch to start training')
         self.parser.add_argument('--load_epoch', type=int, default=0,
                                  help='Default uses latest cached model if continue train or eval set')
+        
+        #Dataset args
+        self.parser.add_argument('--class_ids', dest='class_ids', type=str, default=['clean','noisy'], help='class IDS of the two domains.')
+        self.parser.add_argument('--spec_power', dest='spec_power', type=float, default=1.0, help='Number to raise spectrogram by.')
+        self.parser.add_argument('--energy', dest='energy', type=float, default=1.0, help='to modify the energy/amplitude of the audio-signals')
+        self.parser.add_argument('--dataroot', dest='dataroot', type=str, default=DATAROOT_DEFAULT, help="Directory with data.")
+        self.parser.add_argument('--split', dest='split', type=str, default=SPLIT_DEFAULT, help="Split to use for data set. If data has not been split into sets pass None.")
+        self.parser.add_argument('--data_load_order', dest='data_load_order', type=str,choices=['aligned','unaligned'], help="Load Data as aligned or unaligned. For test phase it is unaligned aligned by default and fro train it is unaligned by default.")
 
 
     def parse_args(self):
@@ -118,7 +128,11 @@ class BaseArgParser(object):
                 args.load_epoch = self.get_last_saved_epoch(args)
                 args.start_epoch = args.load_epoch + 1
 
+        args.phase = 'train' if args.isTrain else 'test' 
+
         self.print_options(args)
+
+
 
         return args
 
