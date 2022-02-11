@@ -1,7 +1,7 @@
 import torch
 import torch.utils.data as data
 import os
-from dataset.base_dataset import get_params, get_transform, make_dataset, make_dataset
+from dataset.base_functions import get_params, get_transform, make_dataset, make_dataset
 import multiprocessing
 import mask_cyclegan_vc.utils as util
 from PIL import Image
@@ -82,6 +82,7 @@ class NoiseDataset(data.Dataset):
         self.A_paths = sorted(make_dataset(self.dir_A, opt.max_dataset_size))
         self.B_paths = sorted(make_dataset(self.dir_B, opt.max_dataset_size))
 
+        self.opt=opt
         self.spec_power = opt.spec_power
         self.energy = opt.energy
         self.phase = opt.phase

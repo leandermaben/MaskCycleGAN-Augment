@@ -69,8 +69,17 @@ class MaskCycleGANVCTraining(object):
         # self.dataset_B_mean = dataset_B_norm_stats['mean']
         # self.dataset_B_std = dataset_B_norm_stats['std']
 
-        # Compute lr decay rate
-        self.n_samples = len(self.dataset_A)
+       
+        # Initialize Train Dataloader
+        self.num_frames = args.num_frames
+        self.dataset = NoiseDataset(args)
+        self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
+                                                            batch_size=self.mini_batch_size,
+                                                            shuffle=True,
+                                                            drop_last=False)
+
+         # Compute lr decay rate
+        self.n_samples = len(self.dataset)
         print(f'n_samples = {self.n_samples}')
         self.generator_lr_decay = self.generator_lr / \
             float(self.num_epochs * (self.n_samples // self.mini_batch_size))
@@ -79,13 +88,6 @@ class MaskCycleGANVCTraining(object):
         print(f'generator_lr_decay = {self.generator_lr_decay}')
         print(f'discriminator_lr_decay = {self.discriminator_lr_decay}')
 
-        # Initialize Train Dataloader
-        self.num_frames = args.num_frames
-        self.dataset = NoiseDataset(args)
-        self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
-                                                            batch_size=self.mini_batch_size,
-                                                            shuffle=True,
-                                                            drop_last=False)
 
         # Initialize Validation Dataloader (used to generate intermediate outputs)
         # self.validation_dataset = NoiseDataset(args)
@@ -182,7 +184,12 @@ class MaskCycleGANVCTraining(object):
                 real_A = data_point['A']
                 mask_A = data_point['A_mask']
                 real_B = data_point['B']
-                mask_K = data_point['B_mask']
+                mask_B = data_point['B_mask']
+                print('#'*25)
+                print(f'Shape of real_A {real_A.numpy().shape}')
+                print(f'Shape of real_B {real_B.numpy().shape}')
+                print(f'Shape of mask_A {mask_A.shape}')
+                print(f'Shape of mask_B {mask_B.shape}')
 
                 self.logger.start_iter()
                 num_iterations = (

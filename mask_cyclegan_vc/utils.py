@@ -28,7 +28,7 @@ import soundfile as sf
 
 
 """
-Borrows heavily from https://github.com/shashankshirol/GeneratingNoisySpeechData
+Borrows from https://github.com/shashankshirol/GeneratingNoisySpeechData
 """
 
 
@@ -180,3 +180,11 @@ def get_mel_spectrogram_fig(spec, title="Mel-Spectrogram"):
     
     plt.close(figure)
     return image
+
+def load_pickle_file(fileName):
+    with open(fileName, 'rb') as f:
+        return pickle.load(f)
+
+def save_pickle(variable, fileName):
+    with open(fileName, 'wb') as f:
+        pickle.dump(variable, f)

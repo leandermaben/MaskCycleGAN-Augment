@@ -9,7 +9,7 @@ import cv2
 import librosa
 import pickle
 import matplotlib.pyplot as plt
-from util.util import save_pickle
+from mask_cyclegan_vc.utils import save_pickle
 
 """
 Code to transfer audio data from a source folder to a target folder with train and test splits.

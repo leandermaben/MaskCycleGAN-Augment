@@ -107,7 +107,7 @@ class Generator(nn.Module):
     """Generator of MaskCycleGAN-VC
     """
 
-    def __init__(self, input_shape=(80, 64), residual_in_channels=256):
+    def __init__(self, input_shape=(128, 128), residual_in_channels=256):
         super(Generator, self).__init__()
         Cx, Tx = input_shape
         self.flattened_channels = (Cx // 4) * residual_in_channels
@@ -268,7 +268,7 @@ class Generator(nn.Module):
 
         # Reshape
         reshape1dto2d = conv1dto2d_layer.unsqueeze(2)
-        reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 20, -1)
+        reshape1dto2d = reshape1dto2d.view(reshape1dto2d.size(0), 256, 32, -1)
 
         # UpSampling
         upsample_layer_1 = self.upSample1(reshape1dto2d)
@@ -309,7 +309,7 @@ class Discriminator(nn.Module):
     """PatchGAN discriminator.
     """
 
-    def __init__(self, input_shape=(80, 64), residual_in_channels=256):
+    def __init__(self, input_shape=(128, 128), residual_in_channels=256):
         super(Discriminator, self).__init__()
 
         self.convLayer1 = nn.Sequential(nn.Conv2d(in_channels=1,
