@@ -175,7 +175,7 @@ class NoiseDataset(data.Dataset):
         if (self.phase).lower() == 'train':
             return {'A': A, 'B': B, 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path}
         else:
-            return {'A': A.squeeze(0), 'B': B.squeeze(0), 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path, 'A_comps': self.clean_comp_dict[A_path]}
+            return {'A': A, 'B': B, 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path, 'A_comps': self.clean_comp_dict[A_path]}
 
 
     def __len__(self):

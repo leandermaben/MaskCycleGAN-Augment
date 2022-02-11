@@ -10,7 +10,6 @@ import numpy as np
 import random
 
 DATAROOT_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache'
-SPLIT_DEFAULT = 'train'
 
 class BaseArgParser(object):
     """
@@ -61,8 +60,8 @@ class BaseArgParser(object):
         self.parser.add_argument('--spec_power', dest='spec_power', type=float, default=1.0, help='Number to raise spectrogram by.')
         self.parser.add_argument('--energy', dest='energy', type=float, default=1.0, help='to modify the energy/amplitude of the audio-signals')
         self.parser.add_argument('--dataroot', dest='dataroot', type=str, default=DATAROOT_DEFAULT, help="Directory with data.")
-        self.parser.add_argument('--split', dest='split', type=str, default=SPLIT_DEFAULT, help="Split to use for data set. If data has not been split into sets pass None.")
-        self.parser.add_argument('--data_load_order', dest='data_load_order', type=str,choices=['aligned','unaligned'], help="Load Data as aligned or unaligned. For test phase it is unaligned aligned by default and for train it is unaligned by default.")
+        self.parser.add_argument('--split', dest='split', type=str, default='use_default', help="Split to use for data set. If data has not been split into sets pass None.")
+        self.parser.add_argument('--data_load_order', dest='data_load_order', default='use_default', type=str,choices=['aligned','unaligned'], help="Load Data as aligned or unaligned. For test phase it is unaligned aligned by default and for train it is unaligned by default.")
         self.parser.add_argument('--load_size', type=int, default=128, help='scale images to this size')
         self.parser.add_argument('--preprocess', type=str, default='resize', help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none | passcodec]')
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
@@ -134,6 +133,16 @@ class BaseArgParser(object):
 
         args.phase = 'train' if args.isTrain else 'test' 
         args.no_flip = True if args.isTrain else args.no_flip
+        if args.split == 'None':
+            args.split=''
+        elif args.split == 'use_default':
+            args.split = args.phase
+        
+        if args.data_load_order =='use_default':
+            args.data_load_order = 'unaligned' if args.isTrain else 'aligned'
+
+
+
 
         self.print_options(args)
 

@@ -44,29 +44,30 @@ class MaskCycleGANVCTraining(object):
         self.epochs_per_save = args.epochs_per_save
         self.epochs_per_plot = args.epochs_per_plot
         self.policy = 'color,translation,cutout' #Policy for diffAugment
-        self.patchNCE = args.PatchNCELoss
-        self.diff_aug = args.diff_aug
+        self.patchNCE = False
+        self.diff_aug = False
 
         # Initialize MelGAN-Vocoder used to decode Mel-spectrograms
-        self.vocoder = torch.hub.load(
-            'descriptinc/melgan-neurips', 'load_melgan')
-        self.sample_rate = args.sample_rate
+        # self.vocoder = torch.hub.load(
+        #     'descriptinc/melgan-neurips', 'load_melgan')
+        # self.sample_rate = args.sample_rate
 
-        # Initialize speakerA's dataset
-        self.dataset_A = self.loadPickleFile(os.path.join(
-            args.preprocessed_data_dir, args.speaker_A_id, f"{args.speaker_A_id}_normalized.pickle"))
-        dataset_A_norm_stats = np.load(os.path.join(
-            args.preprocessed_data_dir, args.speaker_A_id, f"{args.speaker_A_id}_norm_stat.npz"))
-        self.dataset_A_mean = dataset_A_norm_stats['mean']
-        self.dataset_A_std = dataset_A_norm_stats['std']
+        # # Initialize speakerA's dataset
+        # Srtifacts from melGAN
+        # self.dataset_A = self.loadPickleFile(os.path.join(
+        #     args.preprocessed_data_dir, args.speaker_A_id, f"{args.speaker_A_id}_normalized.pickle"))
+        # dataset_A_norm_stats = np.load(os.path.join(
+        #     args.preprocessed_data_dir, args.speaker_A_id, f"{args.speaker_A_id}_norm_stat.npz"))
+        # self.dataset_A_mean = dataset_A_norm_stats['mean']
+        # self.dataset_A_std = dataset_A_norm_stats['std']
 
         # Initialize speakerB's dataset
-        self.dataset_B = self.loadPickleFile(os.path.join(
-            args.preprocessed_data_dir, args.speaker_B_id, f"{args.speaker_B_id}_normalized.pickle"))
-        dataset_B_norm_stats = np.load(os.path.join(
-            args.preprocessed_data_dir, args.speaker_B_id, f"{args.speaker_B_id}_norm_stat.npz"))
-        self.dataset_B_mean = dataset_B_norm_stats['mean']
-        self.dataset_B_std = dataset_B_norm_stats['std']
+        # self.dataset_B = self.loadPickleFile(os.path.join(
+        #     args.preprocessed_data_dir, args.speaker_B_id, f"{args.speaker_B_id}_normalized.pickle"))
+        # dataset_B_norm_stats = np.load(os.path.join(
+        #     args.preprocessed_data_dir, args.speaker_B_id, f"{args.speaker_B_id}_norm_stat.npz"))
+        # self.dataset_B_mean = dataset_B_norm_stats['mean']
+        # self.dataset_B_std = dataset_B_norm_stats['std']
 
         # Compute lr decay rate
         self.n_samples = len(self.dataset_A)
