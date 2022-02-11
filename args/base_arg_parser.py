@@ -67,6 +67,7 @@ class BaseArgParser(object):
         self.parser.add_argument('--preprocess', type=str, default='resize', help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none | passcodec]')
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
         self.parser.add_argument('--crop_size', dest='crop_size', type=int, default=128, help='Size after cropping')
+        self.parser.add_argument('--max_dataset_size', dest='max_dataset_size', type=int, default=float('inf'), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
 
     def parse_args(self):
         """

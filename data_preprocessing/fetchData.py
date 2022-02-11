@@ -31,7 +31,7 @@ Hence it is recommended to use the 'audio' option for the argument --transfer_mo
 
 AUDIO_DATA_PATH_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Parallel_speech_data'
 SUBDIRECTORIES_DEFAULT = ['clean','noisy']
-CACHE_DEFAULT = '/content/MaskCycleGAN-VC/data_cache'
+CACHE_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache'
 
 
 def get_filenames(fileNameA):
