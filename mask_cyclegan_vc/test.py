@@ -14,6 +14,9 @@ from mask_cyclegan_vc.utils import decode_melspectrogram
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
 
+from mask_cyclegan_vc.utils import denorm_and_numpy, getTimeSeries
+import soundfile as sf
+
 
 class MaskCycleGANVCTesting(object):
     """Tester for MaskCycleGAN-VC
@@ -26,6 +29,11 @@ class MaskCycleGANVCTesting(object):
         """
         # Store Args
         self.device = args.device
+
+        args.num_threads = 0   # test code only supports num_threads = 0
+        args.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
+        args.no_flip = True    # no flip; comment this line if results on flipped images are needed.
+    
         
         if hasattr(args,'eval') and args.eval:
             self.eval=True
@@ -40,31 +48,12 @@ class MaskCycleGANVCTesting(object):
 
         self.speaker_A_id = args.speaker_A_id
         self.speaker_B_id = args.speaker_B_id
-        # Initialize MelGAN-Vocoder used to decode Mel-spectrograms
-        self.vocoder = torch.hub.load(
-            'descriptinc/melgan-neurips', 'load_melgan')
+
+
         self.sample_rate = args.sample_rate
 
-        # Initialize speakerA's dataset
-        self.dataset_A = self.loadPickleFile(os.path.join(
-            args.preprocessed_data_dir, self.speaker_A_id, f"{self.speaker_A_id}_normalized.pickle"))
-        dataset_A_norm_stats = np.load(os.path.join(
-            args.preprocessed_data_dir, self.speaker_A_id, f"{self.speaker_A_id}_norm_stat.npz"))
-        self.dataset_A_mean = dataset_A_norm_stats['mean']
-        self.dataset_A_std = dataset_A_norm_stats['std']
-        
-        # Initialize speakerB's dataset
-        self.dataset_B = self.loadPickleFile(os.path.join(
-            args.preprocessed_data_dir, self.speaker_B_id, f"{self.speaker_B_id}_normalized.pickle"))
-        dataset_B_norm_stats = np.load(os.path.join(
-            args.preprocessed_data_dir, self.speaker_B_id, f"{self.speaker_B_id}_norm_stat.npz"))
-        self.dataset_B_mean = dataset_B_norm_stats['mean']
-        self.dataset_B_std = dataset_B_norm_stats['std']
+        self.dataset = NoiseDataset(args)
 
-        source_dataset = self.dataset_A if self.model_name == 'generator_A2B' else self.dataset_B
-        self.dataset = VCDataset(datasetA=source_dataset,
-                                 datasetB=None,
-                                 valid=True)
         self.test_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
                                                            batch_size=1,
                                                            shuffle=False,
@@ -77,6 +66,47 @@ class MaskCycleGANVCTesting(object):
         # Load Generator from ckpt
         self.saver = ModelSaver(args)
         self.saver.load_model(self.generator, self.model_name)
+        
+    def save_audio(opt, visuals_list, img_path):
+
+        """
+        Borrowed from https://github.com/shashankshirol/GeneratingNoisySpeechData
+        """
+
+        results_dir = os.path.join(opt.save_dir, opt.name)
+        img_dir = os.path.join(results_dir, 'audios')
+        short_path = ntpath.basename(img_path[0])
+        name = os.path.splitext(short_path)[0]
+
+        label = "fake_B"  # Concerned with only the fake generated; ignoring other labels
+
+        file_name = '%s/%s.wav' % (label, name)
+        os.makedirs(os.path.join(img_dir, label), exist_ok=True)
+        save_path = os.path.join(img_dir, file_name)
+
+        flag_first = True
+
+        for visual in visuals_list:
+            im_data = visual #Obtaining the generated Output
+            im = denorm_and_numpy(im_data) #De-Normalizing the output tensor to reconstruct the spectrogram
+
+            #Resizing the output to 129x128 size (original splits)
+            if(im.shape[-1] == 1): #to drop last channel
+                im = im[:,:,0]
+            im = Image.fromarray(im)
+            im = im.resize((128, 129), Image.LANCZOS)
+            im = np.asarray(im).astype(np.float)
+
+            if(flag_first):
+                spec = im
+                flag_first = False
+            else:
+                spec = np.concatenate((spec, im), axis=1) #concatenating specs to obtain original.
+
+        data, sr = getTimeSeries(spec, img_path, opt.spec_power, opt.energy, state = opt.phase)
+        sf.write(save_path, data, sr)
+
+        return
 
     def loadPickleFile(self, fileName):
         """Loads a Pickle file.
@@ -91,48 +121,49 @@ class MaskCycleGANVCTesting(object):
             return pickle.load(f)
 
     def test(self):
-        for i, sample in enumerate(tqdm(self.test_dataloader)):
 
-            save_path = None
+        ds_len = len(self.dataset)
+        idx = 0
+        datas = []
+
+        for i, data in enumerate(self.test_dataloader):
+            datas.append(data)
+        while idx < ds_len:
+
+            if(idx >= opt.num_test):
+                break
+
             if self.model_name == 'generator_A2B':
-                real_A = sample
-                real_A = real_A.to(self.device, dtype=torch.float)
-                fake_B = self.generator(real_A, torch.ones_like(real_A))
-
-                wav_fake_B = decode_melspectrogram(self.vocoder, fake_B[0].detach(
-                ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
-
-                wav_real_A = decode_melspectrogram(self.vocoder, real_A[0].detach(
-                ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
-                
-                if self.eval:
-                    torchaudio.save(self.eval_save_path, wav_fake_B, sample_rate=self.sample_rate, bits_per_sample=16)
-                else:
-                    save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_A_id}_to_{self.speaker_B_id}.wav")
-                    save_path_orig = os.path.join(self.converted_audio_dir,
-                                         f"{i}-original_{self.speaker_A_id}_to_{self.speaker_B_id}.wav")
-                    torchaudio.save(save_path, wav_fake_B, sample_rate=self.sample_rate)
-                    torchaudio.save(save_path_orig, wav_real_A, sample_rate=self.sample_rate)
+                real = datas[idx]['A']
+                mask = datas[idx]['A_mask']
+                img_path = datas[idx]['A_paths']
             else:
-                real_B = sample
-                real_B = real_B.to(self.device, dtype=torch.float)
-                fake_A = self.generator(real_B, torch.ones_like(real_B))
+                real = datas[idx]['B']
+                mask = datas[idx]['B_mask']
+                img_path = datas[idx]['B_paths']
+            fake = self.generator(real, mask)
+            visuals_list = [fake]
+            num_comps = datas[idx]["A_comps"] ##Need to generalize for bidirectional
+            comps_processed = 1
 
-                wav_fake_A = decode_melspectrogram(self.vocoder, fake_A[0].detach(
-                ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
-
-                wav_real_B = decode_melspectrogram(self.vocoder, real_B[0].detach(
-                ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
-                
-                if self.eval:
-                    torchaudio.save(self.eval_save_path, wav_fake_A, sample_rate=self.sample_rate, bits_per_sample=16)
-                    
+            while(comps_processed < num_comps):
+                idx += 1
+                if self.model_name == 'generator_A2B':
+                    real = datas[idx]['A']
+                    mask = datas[idx]['A_mask']
+                    img_path = datas[idx]['A_paths']
                 else:
-                    save_path = os.path.join(self.converted_audio_dir, f"{i}-converted_{self.speaker_B_id}_to_{self.speaker_A_id}.wav")
-                    save_path_orig = os.path.join(self.converted_audio_dir,
-                                         f"{i}-original_{self.speaker_B_id}_to_{self.speaker_A_id}.wav")
-                    torchaudio.save(save_path, wav_fake_A, sample_rate=self.sample_rate)
-                    torchaudio.save(save_path_orig, wav_real_B, sample_rate=self.sample_rate)
+                    real = datas[idx]['B']
+                    mask = datas[idx]['B_mask']
+                    img_path = datas[idx]['B_paths']
+                fake = self.generator(real, mask)
+                visuals_list.append(fake)
+                comps_processed += 1
+
+            print("saving: ", img_path[0])
+            save_audio(opt, visuals_list, img_path)
+            idx += 1
+
 
 
 if __name__ == "__main__":

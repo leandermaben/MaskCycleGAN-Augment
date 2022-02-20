@@ -76,7 +76,8 @@ class MaskCycleGANVCTraining(object):
         self.train_dataloader = torch.utils.data.DataLoader(dataset=self.dataset,
                                                             batch_size=self.mini_batch_size,
                                                             shuffle=True,
-                                                            drop_last=False)
+                                                            drop_last=False,
+                                                            num_workers=args.num_threads)
 
          # Compute lr decay rate
         self.n_samples = len(self.dataset)
@@ -90,11 +91,11 @@ class MaskCycleGANVCTraining(object):
 
 
         # Initialize Validation Dataloader (used to generate intermediate outputs)
-        # self.validation_dataset = NoiseDataset(args)
-        # self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
-        #                                                          batch_size=1,
-        #                                                          shuffle=False,
-        #                                                          drop_last=False)
+        self.validation_dataset = NoiseDataset(args,valid=True)
+        self.validation_dataloader = torch.utils.data.DataLoader(dataset=self.validation_dataset,
+                                                                 batch_size=1,
+                                                                 shuffle=False,
+                                                                 drop_last=False)
 
         # Initialize logger and saver objects
         self.logger = TrainLogger(args, len(self.train_dataloader.dataset))
@@ -185,11 +186,6 @@ class MaskCycleGANVCTraining(object):
                 mask_A = data_point['A_mask']
                 real_B = data_point['B']
                 mask_B = data_point['B_mask']
-                print('#'*25)
-                print(f'Shape of real_A {real_A.numpy().shape}')
-                print(f'Shape of real_B {real_B.numpy().shape}')
-                print(f'Shape of mask_A {mask_A.shape}')
-                print(f'Shape of mask_B {mask_B.shape}')
 
                 self.logger.start_iter()
                 num_iterations = (
@@ -365,47 +361,47 @@ class MaskCycleGANVCTraining(object):
                     self.identity_loss_lambda = 0
 
             # Log intermediate outputs on Tensorboard
-            if self.logger.epoch % self.epochs_per_plot == 0:
-                with torch.no_grad():
-                    # Log Mel-spectrograms .png
-                    real_mel_A_fig = get_mel_spectrogram_fig(
-                        real_A[0].detach().cpu())
-                    fake_mel_A_fig = get_mel_spectrogram_fig(
-                        generated_A[0].detach().cpu())
-                    real_mel_B_fig = get_mel_spectrogram_fig(
-                        real_B[0].detach().cpu())
-                    fake_mel_B_fig = get_mel_spectrogram_fig(
-                        generated_B[0].detach().cpu())
-                    self.logger.visualize_outputs({"real_A_spec": real_mel_A_fig, "fake_B_spec": fake_mel_B_fig,
-                                                   "real_B_spec": real_mel_B_fig, "fake_A_spec": fake_mel_A_fig})
+            # if self.logger.epoch % self.epochs_per_plot == 0:
+            #     with torch.no_grad():
+            #         # Log Mel-spectrograms .png
+            #         real_mel_A_fig = get_mel_spectrogram_fig(
+            #             real_A[0].detach().cpu())
+            #         fake_mel_A_fig = get_mel_spectrogram_fig(
+            #             generated_A[0].detach().cpu())
+            #         real_mel_B_fig = get_mel_spectrogram_fig(
+            #             real_B[0].detach().cpu())
+            #         fake_mel_B_fig = get_mel_spectrogram_fig(
+            #             generated_B[0].detach().cpu())
+            #         self.logger.visualize_outputs({"real_A_spec": real_mel_A_fig, "fake_B_spec": fake_mel_B_fig,
+            #                                        "real_B_spec": real_mel_B_fig, "fake_A_spec": fake_mel_A_fig})
 
-                    # Convert Mel-spectrograms from validation set to waveform and log to tensorboard
-                    real_mel_full_A, real_mel_full_B = next(
-                        iter(self.validation_dataloader))
-                    real_mel_full_A = real_mel_full_A.to(
-                        self.device, dtype=torch.float)
-                    real_mel_full_B = real_mel_full_B.to(
-                        self.device, dtype=torch.float)
-                    fake_mel_full_B = self.generator_A2B(
-                        real_mel_full_A, torch.ones_like(real_mel_full_A))
-                    fake_mel_full_A = self.generator_B2A(
-                        real_mel_full_B, torch.ones_like(real_mel_full_B))
-                    real_wav_full_A = decode_melspectrogram(self.vocoder, real_mel_full_A[0].detach(
-                    ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
-                    fake_wav_full_A = decode_melspectrogram(self.vocoder, fake_mel_full_A[0].detach(
-                    ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
-                    real_wav_full_B = decode_melspectrogram(self.vocoder, real_mel_full_B[0].detach(
-                    ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
-                    fake_wav_full_B = decode_melspectrogram(self.vocoder, fake_mel_full_B[0].detach(
-                    ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
-                    self.logger.log_audio(
-                        real_wav_full_A.T, "real_speaker_A_audio", self.sample_rate)
-                    self.logger.log_audio(
-                        fake_wav_full_A.T, "fake_speaker_A_audio", self.sample_rate)
-                    self.logger.log_audio(
-                        real_wav_full_B.T, "real_speaker_B_audio", self.sample_rate)
-                    self.logger.log_audio(
-                        fake_wav_full_B.T, "fake_speaker_B_audio", self.sample_rate)
+            #         # Convert Mel-spectrograms from validation set to waveform and log to tensorboard
+            #         real_mel_full_A, real_mel_full_B = next(
+            #             iter(self.validation_dataloader))
+            #         real_mel_full_A = real_mel_full_A.to(
+            #             self.device, dtype=torch.float)
+            #         real_mel_full_B = real_mel_full_B.to(
+            #             self.device, dtype=torch.float)
+            #         fake_mel_full_B = self.generator_A2B(
+            #             real_mel_full_A, torch.ones_like(real_mel_full_A))
+            #         fake_mel_full_A = self.generator_B2A(
+            #             real_mel_full_B, torch.ones_like(real_mel_full_B))
+            #         real_wav_full_A = decode_melspectrogram(self.vocoder, real_mel_full_A[0].detach(
+            #         ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
+            #         fake_wav_full_A = decode_melspectrogram(self.vocoder, fake_mel_full_A[0].detach(
+            #         ).cpu(), self.dataset_A_mean, self.dataset_A_std).cpu()
+            #         real_wav_full_B = decode_melspectrogram(self.vocoder, real_mel_full_B[0].detach(
+            #         ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
+            #         fake_wav_full_B = decode_melspectrogram(self.vocoder, fake_mel_full_B[0].detach(
+            #         ).cpu(), self.dataset_B_mean, self.dataset_B_std).cpu()
+            #         self.logger.log_audio(
+            #             real_wav_full_A.T, "real_speaker_A_audio", self.sample_rate)
+            #         self.logger.log_audio(
+            #             fake_wav_full_A.T, "fake_speaker_A_audio", self.sample_rate)
+            #         self.logger.log_audio(
+            #             real_wav_full_B.T, "real_speaker_B_audio", self.sample_rate)
+            #         self.logger.log_audio(
+            #             fake_wav_full_B.T, "fake_speaker_B_audio", self.sample_rate)
 
             # Save each model checkpoint
             if self.logger.epoch % self.epochs_per_save == 0:

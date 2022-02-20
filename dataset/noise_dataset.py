@@ -76,13 +76,14 @@ def countComps(sample):
 
 class NoiseDataset(data.Dataset):
 
-    def __init__(self,opt):
+    def __init__(self,opt,valid=False):
         self.dir_A = os.path.join(opt.dataroot,opt.class_ids[0],opt.split)
         self.dir_B = os.path.join(opt.dataroot,opt.class_ids[1],opt.split)
         self.A_paths = sorted(make_dataset(self.dir_A, opt.max_dataset_size))
         self.B_paths = sorted(make_dataset(self.dir_B, opt.max_dataset_size))
 
         self.opt=opt
+        self.valid=valid
         self.spec_power = opt.spec_power
         self.energy = opt.energy
         self.phase = opt.phase
@@ -172,6 +173,9 @@ class NoiseDataset(data.Dataset):
         B_transform = get_transform(self.opt, transform_params_B, grayscale= True)
         B = B_transform(B_img).squeeze(0)
         B_mask = self.get_mask(B)
+
+        if self.valid:
+            return A,B
 
         if (self.phase).lower() == 'train':
             return {'A': A, 'B': B, 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path}
