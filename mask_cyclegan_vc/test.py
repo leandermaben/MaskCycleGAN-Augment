@@ -19,7 +19,7 @@ from PIL import Image
 from mask_cyclegan_vc.utils import denorm_and_numpy, getTimeSeries
 import soundfile as sf
 from dataset.noise_dataset import NoiseDataset
-
+import time
 
 class MaskCycleGANVCTesting(object):
     """Tester for MaskCycleGAN-VC
@@ -170,7 +170,12 @@ class MaskCycleGANVCTesting(object):
 
 
 if __name__ == "__main__":
+    start =time.time()
     parser = CycleGANTestArgParser()
     args = parser.parse_args()
     tester = MaskCycleGANVCTesting(args)
     tester.test()
+    end = time.time()
+    duration = end-start
+    print(f'Time taken is {duration//60} minutes {duration%60} seconds.')
+

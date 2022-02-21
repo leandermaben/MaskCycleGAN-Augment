@@ -17,7 +17,7 @@ import pandas as pd
 RESULTS_DEFAULT = '/content/MaskCycleGAN-Augment/results//mask_cyclegan_vc_clean_noisy/audios/fake_B'
 SOURCE_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache/noisy/test' 
 CSV_PATH_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/annotations.csv'
-USE_GENDER =False
+USE_GENDER =True
 
 
 def calc_LSD_spectrogram(a, b):
@@ -299,4 +299,4 @@ def main(source_dir=SOURCE_DEFAULT,results_dir=RESULTS_DEFAULT):
 
 
 if __name__ == "__main__":
-    main()
+    print(main())
