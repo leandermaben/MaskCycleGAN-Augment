@@ -13,9 +13,12 @@ from dataset.vc_dataset import VCDataset
 from mask_cyclegan_vc.utils import decode_melspectrogram
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
+import ntpath
+from PIL import Image
 
 from mask_cyclegan_vc.utils import denorm_and_numpy, getTimeSeries
 import soundfile as sf
+from dataset.noise_dataset import NoiseDataset
 
 
 class MaskCycleGANVCTesting(object):
@@ -33,7 +36,7 @@ class MaskCycleGANVCTesting(object):
         args.num_threads = 0   # test code only supports num_threads = 0
         args.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
         args.no_flip = True    # no flip; comment this line if results on flipped images are needed.
-    
+        args.max_mask_len = 50 #Does not have any impact since an all 1s mask is used
         
         if hasattr(args,'eval') and args.eval:
             self.eval=True
@@ -67,7 +70,7 @@ class MaskCycleGANVCTesting(object):
         self.saver = ModelSaver(args)
         self.saver.load_model(self.generator, self.model_name)
         
-    def save_audio(opt, visuals_list, img_path):
+    def save_audio(self, opt, visuals_list, img_path):
 
         """
         Borrowed from https://github.com/shashankshirol/GeneratingNoisySpeechData
@@ -88,7 +91,7 @@ class MaskCycleGANVCTesting(object):
 
         for visual in visuals_list:
             im_data = visual #Obtaining the generated Output
-            im = denorm_and_numpy(im_data) #De-Normalizing the output tensor to reconstruct the spectrogram
+            im = denorm_and_numpy(im_data.unsqueeze(1).detach()) #De-Normalizing the output tensor to reconstruct the spectrogram
 
             #Resizing the output to 129x128 size (original splits)
             if(im.shape[-1] == 1): #to drop last channel
@@ -130,38 +133,38 @@ class MaskCycleGANVCTesting(object):
             datas.append(data)
         while idx < ds_len:
 
-            if(idx >= opt.num_test):
-                break
+            # if(idx >= args.num_test):
+            #     break
 
             if self.model_name == 'generator_A2B':
-                real = datas[idx]['A']
-                mask = datas[idx]['A_mask']
+                real = datas[idx]['A'].to(self.device, dtype=torch.float)
+                mask = datas[idx]['A_mask'].to(self.device, dtype=torch.float)
                 img_path = datas[idx]['A_paths']
             else:
-                real = datas[idx]['B']
-                mask = datas[idx]['B_mask']
+                real = datas[idx]['B'].to(self.device, dtype=torch.float)
+                mask = datas[idx]['B_mask'].to(self.device, dtype=torch.float)
                 img_path = datas[idx]['B_paths']
             fake = self.generator(real, mask)
             visuals_list = [fake]
-            num_comps = datas[idx]["A_comps"] ##Need to generalize for bidirectional
+            num_comps = datas[idx]["A_comps"] ##TODO:Need to generalize for bidirectional
             comps_processed = 1
 
             while(comps_processed < num_comps):
                 idx += 1
                 if self.model_name == 'generator_A2B':
-                    real = datas[idx]['A']
-                    mask = datas[idx]['A_mask']
+                    real = datas[idx]['A'].to(self.device, dtype=torch.float)
+                    mask = datas[idx]['A_mask'].to(self.device, dtype=torch.float)
                     img_path = datas[idx]['A_paths']
                 else:
-                    real = datas[idx]['B']
-                    mask = datas[idx]['B_mask']
+                    real = datas[idx]['B'].to(self.device, dtype=torch.float)
+                    mask = datas[idx]['B_mask'].to(self.device, dtype=torch.float)
                     img_path = datas[idx]['B_paths']
                 fake = self.generator(real, mask)
                 visuals_list.append(fake)
                 comps_processed += 1
 
             print("saving: ", img_path[0])
-            save_audio(opt, visuals_list, img_path)
+            self.save_audio(args, visuals_list, img_path)
             idx += 1
 
 
