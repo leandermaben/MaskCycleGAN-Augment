@@ -32,7 +32,7 @@ Hence it is recommended to use the 'audio' option for the argument --transfer_mo
 AUDIO_DATA_PATH_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/Parallel_speech_data'
 SUBDIRECTORIES_DEFAULT = ['clean','noisy']
 CACHE_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache'
-
+MIX = True ## Further mix train set for artifact removal
 
 def get_filenames(fileNameA):
     """
@@ -79,6 +79,12 @@ def transfer_aligned_audio_raw(root_dir,class_ids,data_cache,train_percent,test_
 
     train_split = math.floor(train_percent/100*num_files)
     test_split = math.floor(test_percent/100*num_files)
+
+    if MIX:
+        np.random.seed(0)
+        train_temp = indices[:num_files-test_split]
+        np.random.shuffle(train_temp)
+        indices[:num_files-test_split] = train_temp
 
     for phase,(start, end) in zip(['train','test'],[(0,train_split),(num_files-test_split,num_files)]):
         duration = 0
