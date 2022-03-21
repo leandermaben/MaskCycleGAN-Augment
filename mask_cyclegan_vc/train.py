@@ -102,8 +102,8 @@ class MaskCycleGANVCTraining(object):
         self.saver = ModelSaver(args)
 
         # Initialize Generators and Discriminators
-        self.generator_A2B = Generator().to(self.device)
-        self.generator_B2A = Generator().to(self.device)
+        self.generator_A2B = Generator(input_shape=((args.crop_size, args.crop_size))).to(self.device)
+        self.generator_B2A = Generator(input_shape=((args.crop_size, args.crop_size))).to(self.device)
         self.discriminator_A = Discriminator().to(self.device)
         self.discriminator_B = Discriminator().to(self.device)
         # Discriminator to compute 2 step adversarial loss

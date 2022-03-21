@@ -62,10 +62,10 @@ class BaseArgParser(object):
         self.parser.add_argument('--dataroot', dest='dataroot', type=str, default=DATAROOT_DEFAULT, help="Directory with data.")
         self.parser.add_argument('--split', dest='split', type=str, default='use_default', help="Split to use for data set. If data has not been split into sets pass None.")
         self.parser.add_argument('--data_load_order', dest='data_load_order', default='use_default', type=str,choices=['aligned','unaligned'], help="Load Data as aligned or unaligned. For test phase it is unaligned aligned by default and for train it is unaligned by default.")
-        self.parser.add_argument('--load_size', type=int, default=256, help='scale images to this size')
+        self.parser.add_argument('--load_size', type=int, default=128, help='scale images to this size')
         self.parser.add_argument('--preprocess', type=str, default='resize', help='scaling and cropping of images at load time [resize_and_crop | crop | scale_width | scale_width_and_crop | none | passcodec]')
         self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
-        self.parser.add_argument('--crop_size', dest='crop_size', type=int, default=256, help='Size after cropping')
+        self.parser.add_argument('--crop_size', dest='crop_size', type=int, default=128, help='Size after cropping')
         self.parser.add_argument('--max_dataset_size', dest='max_dataset_size', type=int, default=float('inf'), help='Maximum number of samples allowed per dataset. If the dataset directory contains more than max_dataset_size, only a subset is loaded.')
         self.parser.add_argument('--num_threads', dest='num_threads', type=int, default=4, help='Number of threads for dataloader')
 
