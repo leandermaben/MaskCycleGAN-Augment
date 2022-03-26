@@ -70,7 +70,7 @@ class MaskCycleGANVCTesting(object):
         self.saver = ModelSaver(args)
         self.saver.load_model(self.generator, self.model_name)
         
-    def save_audio(self, opt, visuals_list, img_path):
+    def save_audio(self, opt, visuals_list, img_path, label):
 
         """
         Borrowed from https://github.com/shashankshirol/GeneratingNoisySpeechData
@@ -80,8 +80,6 @@ class MaskCycleGANVCTesting(object):
         img_dir = os.path.join(results_dir, 'audios')
         short_path = ntpath.basename(img_path[0])
         name = os.path.splitext(short_path)[0]
-
-        label = "fake_B"  # Concerned with only the fake generated; ignoring other labels
 
         file_name = '%s/%s.wav' % (label, name)
         os.makedirs(os.path.join(img_dir, label), exist_ok=True)
@@ -125,7 +123,7 @@ class MaskCycleGANVCTesting(object):
 
     def test(self):
 
-        ds_len = len(self.dataset)
+        ds_len = self.dataset.get_clean_len() if self.model_name == 'generator_A2B' else self.dataset.get_noisy_len()
         idx = 0
         datas = []
 
@@ -146,7 +144,7 @@ class MaskCycleGANVCTesting(object):
                 img_path = datas[idx]['B_paths']
             fake = self.generator(real, mask)
             visuals_list = [fake]
-            num_comps = datas[idx]["A_comps"] ##TODO:Need to generalize for bidirectional
+            num_comps = datas[idx]["A_comps"] if self.model_name == 'generator_A2B' else datas[idx]["B_comps"]
             comps_processed = 1
 
             while(comps_processed < num_comps):
@@ -164,7 +162,7 @@ class MaskCycleGANVCTesting(object):
                 comps_processed += 1
 
             print("saving: ", img_path[0])
-            self.save_audio(args, visuals_list, img_path)
+            self.save_audio(args, visuals_list, img_path, label= 'fake_B' if self.model_name == 'generator_A2B' else 'fake_A' )
             idx += 1
 
 

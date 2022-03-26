@@ -180,8 +180,11 @@ class NoiseDataset(data.Dataset):
         if (self.phase).lower() == 'train':
             return {'A': A, 'B': B, 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path}
         else:
-            return {'A': A, 'B': B, 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path, 'A_comps': self.clean_comp_dict[A_path]}
+            return {'A': A, 'B': B, 'A_mask':A_mask, 'B_mask':B_mask, 'A_paths': A_path, 'B_paths': B_path, 'A_comps': self.clean_comp_dict[A_path], 'B_comps':self.noisy_comp_dict[B_path]}
 
-
-    def __len__(self):
+    def get_clean_len(self):
+        return self.clean_specs_len
+    def get_noisy_len(self):
         return self.noisy_specs_len
+    def __len__(self):
+        return max(self.noisy_specs_len,self.clean_specs_len)
