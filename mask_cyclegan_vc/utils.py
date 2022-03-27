@@ -68,7 +68,7 @@ def denorm_and_numpy(inp_tensor):
     inp_tensor = inp_tensor[0, :, :, :] #drop batch dimension
     inp_tensor = inp_tensor.permute((1, 2, 0)) #permute the tensor from C x H x W to H x W x C (numpy equivalent)
     inp_tensor = ((inp_tensor * 0.5) + 0.5) * 255 #to get back from transformation
-    inp_tensor = inp_tensor.cpu().numpy().astype(np.uint8) #generating Numpy ndarray
+    inp_tensor = inp_tensor.numpy().astype(np.uint8) #generating Numpy ndarray
     return inp_tensor
 
 def getTimeSeries(im, img_path, pow, energy = 1.0, state = None):

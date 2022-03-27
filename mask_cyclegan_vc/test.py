@@ -89,7 +89,7 @@ class MaskCycleGANVCTesting(object):
 
         for visual in visuals_list:
             im_data = visual #Obtaining the generated Output
-            im = denorm_and_numpy(im_data.unsqueeze(1).detach()) #De-Normalizing the output tensor to reconstruct the spectrogram
+            im = denorm_and_numpy(im_data.unsqueeze(1)) #De-Normalizing the output tensor to reconstruct the spectrogram
 
             #Resizing the output to 129x128 size (original splits)
             if(im.shape[-1] == 1): #to drop last channel
@@ -143,9 +143,10 @@ class MaskCycleGANVCTesting(object):
                 mask = datas[idx]['B_mask'].to(self.device, dtype=torch.float)
                 img_path = datas[idx]['B_paths']
             fake = self.generator(real, mask)
-            visuals_list = [fake]
+            visuals_list = [fake.detach().cpu()]
             num_comps = datas[idx]["A_comps"] if self.model_name == 'generator_A2B' else datas[idx]["B_comps"]
             comps_processed = 1
+            
 
             while(comps_processed < num_comps):
                 idx += 1
@@ -158,7 +159,9 @@ class MaskCycleGANVCTesting(object):
                     mask = datas[idx]['B_mask'].to(self.device, dtype=torch.float)
                     img_path = datas[idx]['B_paths']
                 fake = self.generator(real, mask)
-                visuals_list.append(fake)
+                del real
+                del mask
+                visuals_list.append(fake.detach().cpu())
                 comps_processed += 1
 
             print("saving: ", img_path[0])
