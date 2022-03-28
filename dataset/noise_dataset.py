@@ -139,6 +139,7 @@ class NoiseDataset(data.Dataset):
         self.noisy_specs_len = len(self.noisy_specs)
         assert self.noisy_specs_len == len(self.noisy_spec_paths)
         del self.no_comps_noisy
+        
 
     def get_mask(self,A):
         if self.phase == 'train':

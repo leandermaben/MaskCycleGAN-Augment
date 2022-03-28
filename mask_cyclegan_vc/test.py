@@ -16,7 +16,7 @@ from saver.model_saver import ModelSaver
 import ntpath
 from PIL import Image
 
-from mask_cyclegan_vc.utils import denorm_and_numpy, getTimeSeries
+from mask_cyclegan_vc.utils import denorm_and_numpy, getTimeSeries, extract, power_to_db
 import soundfile as sf
 from dataset.noise_dataset import NoiseDataset
 import time
@@ -69,6 +69,31 @@ class MaskCycleGANVCTesting(object):
         # Load Generator from ckpt
         self.saver = ModelSaver(args)
         self.saver.load_model(self.generator, self.model_name)
+
+        #Getting train stats
+
+        self.A_max = -float('inf')
+        self.A_min float('inf')
+        self.B_max = -float('inf')
+        self.B_min float('inf')
+
+        train_A = os.path.join(opt.dataroot,opt.class_ids[0],'train')
+        train_B = os.path.join(opt.dataroot,opt.class_ids[1],'train')
+        A_paths = sorted(make_dataset(train_A, opt.max_dataset_size))
+        B_paths = sorted(make_dataset(train_B, opt.max_dataset_size))
+
+        for path in A_paths:
+            mag_spec, phase, sr = extract(path, sr=8000, energy=1.0, state = 'train')
+            log_spec = power_to_db(mag_spec)
+            self.A_max = max(self.A_max,log_spec.max())
+            self.A_min = min(self.A_min,log_spec.min())
+
+        for path in B_paths:
+            mag_spec, phase, sr = extract(path, sr=8000, energy=1.0, state = 'train')
+            log_spec = power_to_db(mag_spec)
+            self.B_max = max(self.B_max,log_spec.max())
+            self.B_min = min(self.B_min,log_spec.min())
+
         
     def save_audio(self, opt, visuals_list, img_path, label):
 
@@ -104,7 +129,14 @@ class MaskCycleGANVCTesting(object):
             else:
                 spec = np.concatenate((spec, im), axis=1) #concatenating specs to obtain original.
 
-        data, sr = getTimeSeries(spec, img_path, opt.spec_power, opt.energy, state = opt.phase)
+        if label[-1] == 'A':
+            train_max = self.A_max
+            train_min = self.A_min
+        elif label[-1] == 'B':
+            train_max = self.B_max
+            train_min = self.B_min
+            
+        data, sr = getTimeSeries(spec, img_path, opt.spec_power, opt.energy, state = opt.phase, train_min = train_min,train_max =train_max)
         sf.write(save_path, data, sr)
 
         return

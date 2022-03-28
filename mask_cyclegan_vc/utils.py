@@ -71,8 +71,9 @@ def denorm_and_numpy(inp_tensor):
     inp_tensor = inp_tensor.numpy().astype(np.uint8) #generating Numpy ndarray
     return inp_tensor
 
-def getTimeSeries(im, img_path, pow, energy = 1.0, state = None):
+def getTimeSeries(im, img_path, pow, energy = 1.0, state = None ,train_min=None, train_max=None):
     mag_spec, phase, sr = extract(img_path[0], 8000, energy, state = state)
+    #TODO : Generalize for pow other than 1 used during training
     log_spec = power_to_db(mag_spec)
 
     h, w = mag_spec.shape
@@ -90,11 +91,16 @@ def getTimeSeries(im, img_path, pow, energy = 1.0, state = None):
 
     _min, _max = log_spec.min(), log_spec.max()
 
+    if train_min == None:
+        train_min = _min
+    if train_max == None:
+        train_max == _max
+
     if(len(im.shape) > 2):
         im = np.mean(im, axis=2)
     im = np.flip(im, axis=0)
 
-    im = unscale_minmax(im, float(_min), float(_max), 0, 255)
+    im = unscale_minmax(im, float(train_min), float(train_max), 0, 255)
     spec = db_to_power(im)
     spec = np.power(spec, 1. / pow)
 
