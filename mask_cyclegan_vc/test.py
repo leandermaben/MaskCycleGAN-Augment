@@ -10,6 +10,7 @@ import torchaudio
 from mask_cyclegan_vc.model import Generator, Discriminator
 from args.cycleGAN_test_arg_parser import CycleGANTestArgParser
 from dataset.vc_dataset import VCDataset
+from dataset.base_functions import make_dataset
 from mask_cyclegan_vc.utils import decode_melspectrogram
 from logger.train_logger import TrainLogger
 from saver.model_saver import ModelSaver
@@ -73,14 +74,14 @@ class MaskCycleGANVCTesting(object):
         #Getting train stats
 
         self.A_max = -float('inf')
-        self.A_min float('inf')
+        self.A_min = float('inf')
         self.B_max = -float('inf')
-        self.B_min float('inf')
+        self.B_min = float('inf')
 
-        train_A = os.path.join(opt.dataroot,opt.class_ids[0],'train')
-        train_B = os.path.join(opt.dataroot,opt.class_ids[1],'train')
-        A_paths = sorted(make_dataset(train_A, opt.max_dataset_size))
-        B_paths = sorted(make_dataset(train_B, opt.max_dataset_size))
+        train_A = os.path.join(args.dataroot,args.class_ids[0],'train')
+        train_B = os.path.join(args.dataroot,args.class_ids[1],'train')
+        A_paths = sorted(make_dataset(train_A, args.max_dataset_size))
+        B_paths = sorted(make_dataset(train_B, args.max_dataset_size))
 
         for path in A_paths:
             mag_spec, phase, sr = extract(path, sr=8000, energy=1.0, state = 'train')

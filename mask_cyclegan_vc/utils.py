@@ -94,7 +94,7 @@ def getTimeSeries(im, img_path, pow, energy = 1.0, state = None ,train_min=None,
     if train_min == None:
         train_min = _min
     if train_max == None:
-        train_max == _max
+        train_max = _max
 
     if(len(im.shape) > 2):
         im = np.mean(im, axis=2)

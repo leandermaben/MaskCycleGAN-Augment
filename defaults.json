@@ -17,7 +17,7 @@
     "codec2_bitrate":3200,
     "train_speakers":["fe_03_1522-02147", "fe_03_2141-01326", "fe_03_3425-00177"],
     "test_speakers": ["fe_03_1678-00558", "fe_03_3720-01342"],
-    "train_duration_max":300,
+    "train_duration_max":120,
     "test_duration_max":240,
     "noise_file":"/content/drive/MyDrive/NTU - Speech Augmentation/dkitchen_ch16.wav",
     "clean_additive_weight":0.5,
