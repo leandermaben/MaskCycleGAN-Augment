@@ -395,6 +395,11 @@ def fetch_with_codec(clean_path,codec,data_cache,train_speakers,test_speakers,tr
 
 def additive_noise(clean_path,noise_file,data_cache,train_speakers,test_speakers,train_duration_max,test_duration_max):
     noise, noise_sr = librosa.load(noise_file, sr=None)
+    # noise_train = noise[0:noise.shape[0]//2]
+    # noise_test = noise[noise.shape[0]//2:]
+
+    noise_train = noise
+    noise_test = noise
 
     train_clips = []
     test_clips = []
@@ -422,9 +427,9 @@ def additive_noise(clean_path,noise_file,data_cache,train_speakers,test_speakers
             shutil.copyfile(os.path.join(clean_path,clip),os.path.join(data_cache,'clean','train',clip))
             clean_data, clean_sr = librosa.load(os.path.join(clean_path,clip), sr=None)
             assert clean_sr == noise_sr
-            assert noise.shape[0]>clean_data.shape[0]
-            start = np.random.randint(0,noise.shape[0]-clean_data.shape[0]+1)
-            result = defaults["clean_additive_weight"]*clean_data + defaults["noisy_additive_weight"]*noise[start:start+clean_data.shape[0]]
+            assert noise_train.shape[0]>clean_data.shape[0]
+            start = np.random.randint(0,noise_train.shape[0]-clean_data.shape[0]+1)
+            result = defaults["clean_additive_weight"]*clean_data + defaults["noisy_additive_weight"]*noise_train[start:start+clean_data.shape[0]]
             sf.write(os.path.join(data_cache,'noisy','train',clip),result,clean_sr)
             train_duration_saved+=librosa.get_duration(filename=os.path.join(clean_path,clip))
 
@@ -435,9 +440,9 @@ def additive_noise(clean_path,noise_file,data_cache,train_speakers,test_speakers
             shutil.copyfile(os.path.join(clean_path,clip),os.path.join(data_cache,'clean','test',clip))
             clean_data, clean_sr = librosa.load(os.path.join(clean_path,clip), sr=None)
             assert clean_sr == noise_sr
-            assert noise.shape[0]>clean_data.shape[0]
-            start = np.random.randint(0,noise.shape[0]-clean_data.shape[0]+1)
-            result = 0.5*clean_data + 0.5*noise[start:start+clean_data.shape[0]]
+            assert noise_test.shape[0]>clean_data.shape[0]
+            start = np.random.randint(0,noise_test.shape[0]-clean_data.shape[0]+1)
+            result = 0.5*clean_data + 0.5*noise_test[start:start+clean_data.shape[0]]
             sf.write(os.path.join(data_cache,'noisy','test',clip),result,clean_sr)
             test_duration_saved+=librosa.get_duration(filename=os.path.join(clean_path,clip))
 
