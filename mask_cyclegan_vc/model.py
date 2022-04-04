@@ -107,13 +107,13 @@ class Generator(nn.Module):
     """Generator of MaskCycleGAN-VC
     """
 
-    def __init__(self, input_shape=(128, 128), residual_in_channels=256):
+    def __init__(self, input_shape=(128, 128), residual_in_channels=256, in_channels=2, out_channels=1):
         super(Generator, self).__init__()
         Cx, Tx = input_shape
         self.flattened_channels = (Cx // 4) * residual_in_channels
 
         # 2D Conv Layer
-        self.conv1 = nn.Conv2d(in_channels=2,
+        self.conv1 = nn.Conv2d(in_channels=in_channels,
                                out_channels=residual_in_channels // 2,
                                kernel_size=(5, 15),
                                stride=(1, 1),
@@ -205,7 +205,7 @@ class Generator(nn.Module):
 
         # 2D Conv Layer
         self.lastConvLayer = nn.Conv2d(in_channels=residual_in_channels // 2,
-                                       out_channels=1,
+                                       out_channels=out_channels,
                                        kernel_size=(5, 15),
                                        stride=(1, 1),
                                        padding=(2, 7))
@@ -236,9 +236,13 @@ class Generator(nn.Module):
                                        GLU())
         return self.convLayer
 
-    def forward(self, x, mask):
+    def forward(self, x, mask, res=None):
         # Conv2d
-        x = torch.stack((x*mask, mask), dim=1)
+        if res is None:
+            x = torch.stack((x*mask, mask), dim=1)
+        else:
+            x = torch.stack((x*mask, mask, res), dim=1) # [batch_size,3,inp_size,inp_size]
+        
         conv1 = self.conv1(x) * torch.sigmoid(self.conv1_gates(x))  # GLU
 
         # Downsampling
@@ -275,9 +279,13 @@ class Generator(nn.Module):
         upsample_layer_2 = self.upSample2(upsample_layer_1)
 
         # Conv2d
-        output = self.lastConvLayer(upsample_layer_2)
-        output = output.squeeze(1)
-        return output
+        if res is None:
+            output = self.lastConvLayer(upsample_layer_2)
+            output = output.squeeze(1)
+            return output
+        else:
+            output = self.lastConvLayer(upsample_layer_2)
+            return output[:,0,:,:], output[:,1,:,:]
     
     def intermediate_outputs(self,x):
         mask = torch.ones_like(x)

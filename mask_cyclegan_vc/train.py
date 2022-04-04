@@ -46,7 +46,7 @@ class MaskCycleGANVCTraining(object):
         self.policy = 'color,translation,cutout' #Policy for diffAugment
         self.patchNCE = False
         self.diff_aug = False
-
+        self.use_res = args.use_res
         # Initialize MelGAN-Vocoder used to decode Mel-spectrograms
         # self.vocoder = torch.hub.load(
         #     'descriptinc/melgan-neurips', 'load_melgan')
@@ -102,8 +102,11 @@ class MaskCycleGANVCTraining(object):
         self.saver = ModelSaver(args)
 
         # Initialize Generators and Discriminators
-        self.generator_A2B = Generator(input_shape=((args.crop_size, args.crop_size))).to(self.device)
-        self.generator_B2A = Generator(input_shape=((args.crop_size, args.crop_size))).to(self.device)
+        in_channels_gen = 3 if args.use_res else 2
+        out_channels_gen = 2 if args.use_res else 1
+
+        self.generator_A2B = Generator(input_shape=((args.crop_size, args.crop_size)),in_channels=in_channels_gen, out_channels=out_channels).to(self.device)
+        self.generator_B2A = Generator(input_shape=((args.crop_size, args.crop_size)),in_channels=in_channels_gen, out_channels=out_channels).to(self.device)
         self.discriminator_A = Discriminator().to(self.device)
         self.discriminator_B = Discriminator().to(self.device)
         # Discriminator to compute 2 step adversarial loss
@@ -196,6 +199,12 @@ class MaskCycleGANVCTraining(object):
                     mask_A = mask_A.to(self.device, dtype=torch.float)
                     real_B = real_B.to(self.device, dtype=torch.float)
                     mask_B = mask_B.to(self.device, dtype=torch.float)
+                    if self.use_res:
+                        res_A = torch.zeros_like(real_A)
+                        res_B = torch.zeros_like(real_B)
+                    else:
+                        res_A=None
+                        res_B=None
 
                     # ----------------
                     # Train Generator
@@ -208,14 +217,24 @@ class MaskCycleGANVCTraining(object):
                     self.discriminator_B2.eval()
 
                     # Generator Feed Forward
-                    fake_B = self.generator_A2B(real_A, mask_A)
-                    cycle_A = self.generator_B2A(fake_B, torch.ones_like(fake_B))
-                    fake_A = self.generator_B2A(real_B, mask_B)
-                    cycle_B = self.generator_A2B(fake_A, torch.ones_like(fake_A))
-                    identity_A = self.generator_B2A(
-                        real_A, torch.ones_like(real_A))
-                    identity_B = self.generator_A2B(
-                        real_B, torch.ones_like(real_B))
+                    if not self.use_res:
+                        fake_B = self.generator_A2B(real_A, mask_A)
+                        cycle_A = self.generator_B2A(fake_B, torch.ones_like(fake_B))
+                        fake_A = self.generator_B2A(real_B, mask_B)
+                        cycle_B = self.generator_A2B(fake_A, torch.ones_like(fake_A))
+                        identity_A = self.generator_B2A(
+                            real_A, torch.ones_like(real_A))
+                        identity_B = self.generator_A2B(
+                            real_B, torch.ones_like(real_B))
+                    else:
+                        fake_B, res_B = self.generator_A2B(real_A, mask_A, torch.zeros_like(real_A))
+                        cycle_A,_ = self.generator_B2A(fake_B, torch.ones_like(fake_B), res_B)
+                        fake_A, res_A = self.generator_B2A(real_B, mask_B, torch.zeros_like(real_B))
+                        cycle_B = self.generator_A2B(fake_A, torch.ones_like(fake_A), res_A)
+                        identity_A = self.generator_B2A(
+                            real_A, torch.ones_like(real_A), torch.zeros_like(real_A))
+                        identity_B = self.generator_A2B(
+                            real_B, torch.ones_like(real_B), torch.zeros_like(real_B))
                     # print(f"{'*'*25} Shape of img {fake_A.cpu().detach().numpy().shape}")
                     # print(f"{'*'*25} Shape of augmented image {DiffAugment(fake_A,policy=self.policy).cpu().detach().numpy().shape}")
                     if self.diff_aug:
@@ -281,38 +300,46 @@ class MaskCycleGANVCTraining(object):
                     self.discriminator_B2.train()
 
                     # Discriminator Feed Forward
+                    if not self.use_res:
+                        generated_A = self.generator_B2A(real_B, mask_B)
+                        cycled_B = self.generator_A2B(
+                        generated_A, torch.ones_like(generated_A))
+                        generated_B = self.generator_A2B(real_A, mask_A)
+                        cycled_A = self.generator_B2A(
+                        generated_B, torch.ones_like(generated_B))
+                    else:
+                        generated_A, generated_res_A = self.generator_B2A(real_B, mask_B, torch.zeros_like(real_B))
+                        cycled_B, _ = self.generator_A2B(
+                        generated_A, torch.ones_like(generated_A), generated_res_A)
+                        generated_B, generated_res_B = self.generator_A2B(real_A, mask_A, torch.zeros_like(real_A))
+                        cycled_A = self.generator_B2A(
+                        generated_B, torch.ones_like(generated_B), generated_res_B)
+                        
                     if self.diff_aug:
                         d_real_A = self.discriminator_A(DiffAugment(real_A ,policy=self.policy))
                         d_real_B = self.discriminator_B(DiffAugment(real_B ,policy=self.policy))
                         d_real_A2 = self.discriminator_A2(DiffAugment(real_A ,policy=self.policy))
                         d_real_B2 = self.discriminator_B2(DiffAugment(real_B ,policy=self.policy))
-                        generated_A = self.generator_B2A(real_B, mask_B)
                         d_fake_A = self.discriminator_A(DiffAugment(generated_A ,policy=self.policy))
                     else:
                         d_real_A = self.discriminator_A(real_A )
                         d_real_B = self.discriminator_B(real_B)
                         d_real_A2 = self.discriminator_A2(real_A)
                         d_real_B2 = self.discriminator_B2(real_B)
-                        generated_A = self.generator_B2A(real_B, mask_B)
                         d_fake_A = self.discriminator_A(generated_A)
 
                     # For Two Step Adverserial Loss A->B
-                    cycled_B = self.generator_A2B(
-                        generated_A, torch.ones_like(generated_A))
                     if self.diff_aug:
                         d_cycled_B = self.discriminator_B2(DiffAugment(cycled_B ,policy=self.policy))
                     else:
                         d_cycled_B = self.discriminator_B2(cycled_B)
 
-                    generated_B = self.generator_A2B(real_A, mask_A)
                     if self.diff_aug:
                         d_fake_B = self.discriminator_B(DiffAugment(generated_B ,policy=self.policy))
                     else:
                         d_fake_B = self.discriminator_B(generated_B)
 
                     # For Two Step Adverserial Loss B->A
-                    cycled_A = self.generator_B2A(
-                        generated_B, torch.ones_like(generated_B))
                     if self.diff_aug:
                         d_cycled_A = self.discriminator_A2(DiffAugment(cycled_A ,policy=self.policy))
                     else:
