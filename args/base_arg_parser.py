@@ -44,6 +44,8 @@ class BaseArgParser(object):
             '--seed', type=int, default=0, help='Random Seed.')
         self.parser.add_argument('--gpu_ids', type=str, default='0',
                                  help='Comma-separated list of GPU IDs.')
+        self.parser.add_argument('--use_res', action='store_true',
+                                 help='Generate residual information')
 
         # Logger Args
         self.parser.add_argument('--steps_per_print', type=int, default=1000,
