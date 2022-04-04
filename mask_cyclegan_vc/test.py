@@ -33,6 +33,7 @@ class MaskCycleGANVCTesting(object):
         """
         # Store Args
         self.device = args.device
+        self.use_res = args.use_res
 
         args.num_threads = 0   # test code only supports num_threads = 0
         args.serial_batches = True  # disable data shuffling; comment this line if results on randomly chosen images are needed.
@@ -64,7 +65,9 @@ class MaskCycleGANVCTesting(object):
                                                            drop_last=False)
 
         # Generator
-        self.generator = Generator().to(self.device)
+        in_channels= 3 if self.use_res else 2
+        out_channels = 2 if self.use_res else 1
+        self.generator = Generator(in_channels=in_channels, out_channels=out_channels).to(self.device)
         self.generator.eval()
 
         # Load Generator from ckpt
@@ -175,7 +178,10 @@ class MaskCycleGANVCTesting(object):
                 real = datas[idx]['B'].to(self.device, dtype=torch.float)
                 mask = datas[idx]['B_mask'].to(self.device, dtype=torch.float)
                 img_path = datas[idx]['B_paths']
-            fake = self.generator(real, mask)
+            if not self.use_res:
+                fake = self.generator(real, mask)
+            else:
+                fake, _ = self.generator(real, mask, torch.zeros_like(real))
             visuals_list = [fake.detach().cpu()]
             num_comps = datas[idx]["A_comps"] if self.model_name == 'generator_A2B' else datas[idx]["B_comps"]
             comps_processed = 1
@@ -191,7 +197,10 @@ class MaskCycleGANVCTesting(object):
                     real = datas[idx]['B'].to(self.device, dtype=torch.float)
                     mask = datas[idx]['B_mask'].to(self.device, dtype=torch.float)
                     img_path = datas[idx]['B_paths']
-                fake = self.generator(real, mask)
+                if not self.use_res:
+                    fake = self.generator(real, mask)
+                else:
+                    fake, _ = self.generator(real, mask, torch.zeros_like(real))
                 del real
                 del mask
                 visuals_list.append(fake.detach().cpu())
