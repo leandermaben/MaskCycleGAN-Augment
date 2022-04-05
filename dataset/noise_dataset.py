@@ -65,7 +65,7 @@ def split_and_save(spec, pow=1.0, state = "Train", channels = 1):
 
 
 def processInput(filepath, power, state, channels):
-    mag_spec, phase, sr = util.extract(filepath, sr=8000, energy=1.0, state = state)
+    mag_spec, phase, sr = util.extract(filepath, sr=defaults["sampling_rate"], energy=1.0, state = state)
     components = split_and_save(mag_spec, pow=power, state = state, channels = channels)
 
     return components

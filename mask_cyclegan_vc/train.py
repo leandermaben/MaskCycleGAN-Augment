@@ -105,8 +105,8 @@ class MaskCycleGANVCTraining(object):
         in_channels_gen = 3 if args.use_res else 2
         out_channels_gen = 2 if args.use_res else 1
 
-        self.generator_A2B = Generator(input_shape=((args.crop_size, args.crop_size)),in_channels=in_channels_gen, out_channels=out_channels).to(self.device)
-        self.generator_B2A = Generator(input_shape=((args.crop_size, args.crop_size)),in_channels=in_channels_gen, out_channels=out_channels).to(self.device)
+        self.generator_A2B = Generator(input_shape=((args.crop_size, args.crop_size)),in_channels=in_channels_gen, out_channels=out_channels_gen).to(self.device)
+        self.generator_B2A = Generator(input_shape=((args.crop_size, args.crop_size)),in_channels=in_channels_gen, out_channels=out_channels_gen).to(self.device)
         self.discriminator_A = Discriminator().to(self.device)
         self.discriminator_B = Discriminator().to(self.device)
         # Discriminator to compute 2 step adversarial loss
@@ -314,7 +314,7 @@ class MaskCycleGANVCTraining(object):
                         generated_B, generated_res_B = self.generator_A2B(real_A, mask_A, torch.zeros_like(real_A))
                         cycled_A = self.generator_B2A(
                         generated_B, torch.ones_like(generated_B), generated_res_B)
-                        
+
                     if self.diff_aug:
                         d_real_A = self.discriminator_A(DiffAugment(real_A ,policy=self.policy))
                         d_real_B = self.discriminator_B(DiffAugment(real_B ,policy=self.policy))

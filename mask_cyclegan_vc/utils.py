@@ -72,7 +72,7 @@ def denorm_and_numpy(inp_tensor):
     return inp_tensor
 
 def getTimeSeries(im, img_path, pow, energy = 1.0, state = None ,train_min=None, train_max=None):
-    mag_spec, phase, sr = extract(img_path[0], 8000, energy, state = state)
+    mag_spec, phase, sr = extract(img_path[0], defaults["sampling_rate"], energy, state = state)
     #TODO : Generalize for pow other than 1 used during training
     log_spec = power_to_db(mag_spec)
 
