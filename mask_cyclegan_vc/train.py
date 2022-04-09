@@ -230,10 +230,10 @@ class MaskCycleGANVCTraining(object):
                         fake_B, res_B = self.generator_A2B(real_A, mask_A, torch.zeros_like(real_A))
                         cycle_A,_ = self.generator_B2A(fake_B, torch.ones_like(fake_B), res_B)
                         fake_A, res_A = self.generator_B2A(real_B, mask_B, torch.zeros_like(real_B))
-                        cycle_B = self.generator_A2B(fake_A, torch.ones_like(fake_A), res_A)
-                        identity_A = self.generator_B2A(
+                        cycle_B,_ = self.generator_A2B(fake_A, torch.ones_like(fake_A), res_A)
+                        identity_A,_ = self.generator_B2A(
                             real_A, torch.ones_like(real_A), torch.zeros_like(real_A))
-                        identity_B = self.generator_A2B(
+                        identity_B,_ = self.generator_A2B(
                             real_B, torch.ones_like(real_B), torch.zeros_like(real_B))
                     # print(f"{'*'*25} Shape of img {fake_A.cpu().detach().numpy().shape}")
                     # print(f"{'*'*25} Shape of augmented image {DiffAugment(fake_A,policy=self.policy).cpu().detach().numpy().shape}")
@@ -312,7 +312,7 @@ class MaskCycleGANVCTraining(object):
                         cycled_B, _ = self.generator_A2B(
                         generated_A, torch.ones_like(generated_A), generated_res_A)
                         generated_B, generated_res_B = self.generator_A2B(real_A, mask_A, torch.zeros_like(real_A))
-                        cycled_A = self.generator_B2A(
+                        cycled_A,_ = self.generator_B2A(
                         generated_B, torch.ones_like(generated_B), generated_res_B)
 
                     if self.diff_aug:

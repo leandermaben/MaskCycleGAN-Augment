@@ -111,6 +111,8 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         Cx, Tx = input_shape
         self.flattened_channels = (Cx // 4) * residual_in_channels
+        print('#'*25)        
+        print(f'Input channels: {in_channels}')
 
         # 2D Conv Layer
         self.conv1 = nn.Conv2d(in_channels=in_channels,
@@ -119,7 +121,7 @@ class Generator(nn.Module):
                                stride=(1, 1),
                                padding=(2, 7))
 
-        self.conv1_gates = nn.Conv2d(in_channels=2,
+        self.conv1_gates = nn.Conv2d(in_channels=in_channels,
                                      out_channels=residual_in_channels // 2,
                                      kernel_size=(5, 15),
                                      stride=1,

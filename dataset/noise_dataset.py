@@ -12,7 +12,12 @@ from collections import OrderedDict
 import math
 from joblib import Parallel, delayed
 import numpy as np
+import json
 
+#Loading defaults
+
+with open('defaults.json','r') as f:
+    defaults = json.load(f)
 """
 Heavily borrows from https://github.com/shashankshirol/GeneratingNoisySpeechData
 """
