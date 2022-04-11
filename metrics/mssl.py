@@ -19,10 +19,18 @@ CSV_PATH can be ignored if separate scores for male and female are not required 
 
 """
 
-RESULTS_DEFAULT = '/content/MaskCycleGAN-Augment/results//mask_cyclegan_vc_clean_noisy/audios/fake_B'
-SOURCE_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache/noisy/test' 
-CSV_PATH_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/annotations.csv'
-USE_GENDER = True
+import json
+
+#Loading defaults
+
+with open('defaults.json','r') as f:
+    defaults = json.load(f)
+
+RESULTS_DEFAULT = defaults['test_results']
+SOURCE_DEFAULT = defaults['test_source']
+CSV_PATH_DEFAULT = defaults['annotations']
+USE_GENDER =defaults['use_gender_test']
+
 
 STANDARD_LUFS = -23.0
 OVERLAP_DEFAULT = 0.75 

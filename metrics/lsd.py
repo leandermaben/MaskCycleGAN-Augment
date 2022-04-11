@@ -13,11 +13,17 @@ import soundfile as sf
 import shutil
 import pandas as pd
 #from timeit import default_timer as timer
+import json
 
-RESULTS_DEFAULT = '/content/MaskCycleGAN-Augment/results//mask_cyclegan_vc_clean_noisy/audios/fake_B'
-SOURCE_DEFAULT = '/content/MaskCycleGAN-Augment/data_cache/noisy/test' 
-CSV_PATH_DEFAULT = '/content/drive/MyDrive/NTU - Speech Augmentation/annotations.csv'
-USE_GENDER =True
+#Loading defaults
+
+with open('defaults.json','r') as f:
+    defaults = json.load(f)
+
+RESULTS_DEFAULT = defaults['test_results']
+SOURCE_DEFAULT = defaults['test_source']
+CSV_PATH_DEFAULT = defaults['annotations']
+USE_GENDER =defaults['use_gender_test']
 
 
 def calc_LSD_spectrogram(a, b):

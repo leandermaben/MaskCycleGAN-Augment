@@ -23,7 +23,7 @@
     "clean_additive_weight":0.5,
     "noisy_additive_weight":0.5,
     "test_source":"/content/MaskCycleGAN-Augment/data_cache/noisy/test",
-    "test_results":"/content/MaskCycleGAN-Augment/results/attention_noisy/test_latest/audios/fake_B",
+    "test_results":"/content/MaskCycleGAN-Augment/results/mcg_rats_ted/audios/fake_B",
     "use_gender_test":false,
     "nfft":256,
     "align_hop":1,

@@ -25,7 +25,12 @@ import os
 import pickle
 import pyloudnorm as pyln
 import soundfile as sf
+import json
 
+#Loading defaults
+
+with open('defaults.json','r') as f:
+    defaults = json.load(f)
 
 """
 Borrows from https://github.com/shashankshirol/GeneratingNoisySpeechData
