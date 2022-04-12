@@ -371,15 +371,18 @@ def fetch_with_codec(clean_path,codec,data_cache,train_speakers,test_speakers,tr
                     run('make')
                     os.chdir(cwd)
                 file_orig = os.path.join(data_cache,'clean',phase,file)
+                file_8k = os.path.join(data_cache,'noisy',phase,file[:-4]+'_8k.wav')
                 file_raw_input = os.path.join(data_cache,'noisy',phase,file[:-4]+'_in.raw')
                 file_enc = os.path.join(data_cache,'noisy',phase,file[:-4]+'_enc.bit')
                 file_raw_out = os.path.join(data_cache,'noisy',phase,file[:-4]+'_out.raw')
                 file_out = os.path.join(data_cache,'noisy',phase,file)
-                run(f'ffmpeg -i {file_orig} -f s16le -acodec pcm_s16le {file_raw_input}') #Convert to raw
+                run(f'ffmpeg -hide_banner -loglevel error -i {file_orig} -ar 8k -y {file_8k}')
+                run(f'ffmpeg -i {file_8k} -f s16le -acodec pcm_s16le {file_raw_input}') #Convert to raw
                 run(f'codec2/build_linux/src/c2enc {defaults["codec2_bitrate"]} {file_raw_input} {file_enc}') # Encode
                 run(f'codec2/build_linux/src/c2dec {defaults["codec2_bitrate"]} {file_enc} {file_raw_out}') #Decode
-                run(f'ffmpeg -f s16le -ar 16k -ac 1 -i {file_raw_out} {file_out}') #Convert to wav
+                run(f'ffmpeg -f s16le -ar 8k -ac 1 -i {file_raw_out} {file_out}') #Convert to wav
                 
+                os.remove(file_8k)
                 os.remove(file_raw_input)
                 os.remove(file_enc)
                 os.remove(file_raw_out)
@@ -448,6 +451,50 @@ def additive_noise(clean_path,noise_file,data_cache,train_speakers,test_speakers
 
     print(f'Saved {test_duration_saved} seconds of audio to test.')
 
+def rats_noise(root_dir,data_cache,train_speakers,test_speakers,train_duration_max,test_duration_max):
+
+    train_clips = []
+    test_clips = []
+    
+    clean_path = os.path.join(root_dir,'clean')
+    noisy_path = os.path.join(root_dir,'noisy')
+
+    for file in os.listdir(clean_path):
+        if file[:16] in train_speakers:
+            train_clips.append(file)
+        elif file[:16] in test_speakers:
+            test_clips.append(file)
+
+    np.random.seed(7)
+    np.random.shuffle(train_clips)
+    np.random.seed(8)
+    np.random.shuffle(test_clips)
+
+    os.makedirs(os.path.join(data_cache,'clean','train'))
+    os.makedirs(os.path.join(data_cache,'clean','test'))
+    os.makedirs(os.path.join(data_cache,'noisy','train'))
+    os.makedirs(os.path.join(data_cache,'noisy','test'))
+
+    train_duration_saved = 0
+    test_duration_saved = 0
+    for clip in train_clips:
+        clean_clip,noisy_clip,renamed_clip = get_filenames(clip)
+        if librosa.get_duration(filename=os.path.join(root_dir,'clean',clip)) + train_duration_saved < train_duration_max and librosa.get_duration(filename=os.path.join(root_dir,'clean',clip))>1:
+            shutil.copyfile(os.path.join(clean_path,clip),os.path.join(data_cache,'clean','train',renamed_clip))
+            shutil.copyfile(os.path.join(noisy_path,noisy_clip),os.path.join(data_cache,'noisy','train',renamed_clip))
+            train_duration_saved+=librosa.get_duration(filename=os.path.join(clean_path,clip))
+
+    print(f'Saved {train_duration_saved} seconds of audio to train.')
+    
+    for clip in test_clips:
+        clean_clip,noisy_clip,renamed_clip = get_filenames(clip)
+        if librosa.get_duration(filename=os.path.join(clean_path,clip)) + test_duration_saved < test_duration_max and librosa.get_duration(filename=os.path.join(clean_path,clip))>1:
+            shutil.copyfile(os.path.join(clean_path,clip),os.path.join(data_cache,'clean','test',renamed_clip))
+            shutil.copyfile(os.path.join(noisy_path,noisy_clip),os.path.join(data_cache,'noisy','test',renamed_clip))
+            test_duration_saved+=librosa.get_duration(filename=os.path.join(clean_path,clip))
+
+    print(f'Saved {test_duration_saved} seconds of audio to test.')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Prepare Data')
@@ -459,7 +506,7 @@ if __name__ == '__main__':
     parser.add_argument('--test_percent', dest='test_percent', type=int, default=defaults["test_percent"], help="Percentage for test split.Ignored for --transfer_mode npy or additive_noise.")
     parser.add_argument('--size_multiple', dest='size_multiple', type=int, default=defaults["size_multiple"], help="Required Factor of Dimensions ONLY if spectrogram mode of tranfer is used")
     parser.add_argument('--sampling_rate', dest='sampling_rate', type=int, default=defaults["sampling_rate"], help="Sampling rate for audio. Use if tranfer_mode is spectrogram or npy")
-    parser.add_argument('--transfer_mode', dest='transfer_mode', type=str, choices=['audio','spectrogram','npy','codec','additive_noise'], default=defaults["transfer_mode"], help='Transfer files as raw audio ,converted spectrogram, from npy files, using codecor adding noise.')
+    parser.add_argument('--transfer_mode', dest='transfer_mode', type=str, choices=['rats','spectrogram','npy','codec','additive_noise'], default=defaults["transfer_mode"], help='Transfer files as raw audio ,converted spectrogram, from npy files, using codecor adding noise.')
     parser.add_argument('--use_genders', dest='use_genders', type=str, default=defaults["use_genders"], help='Genders to include in train set. Pass None if you do not want to check genders.Ignored for --transfer_mode [spectrogram|npy]')
     parser.add_argument('--npy_train_source', dest='npy_train_source', type=str, default=defaults["npy_train"], help='Path where npy train set is present.')
     parser.add_argument('--npy_test_source', dest='npy_test_source', type=str, default=defaults["npy_test"], help='Path where npy test set is present.')
@@ -477,8 +524,8 @@ if __name__ == '__main__':
     if args.transfer_mode == 'spectrogram':
         for class_id in args.sub_directories:        
             preprocess_dataset_spectrogram(os.path.join(args.audio_path,class_id),class_id,args.sampling_rate, args.data_cache, args.train_percent, args.test_percent, args.size_multiple)
-    elif args.transfer_mode == 'audio':
-        transfer_aligned_audio_raw(args.audio_path,args.sub_directories,args.data_cache,args.train_percent,args.test_percent, args.use_genders, args.annotations_path, get_filenames)
+    elif args.transfer_mode == 'rats':
+        rats_noise(args.audio_path, args.data_cache, args.train_speakers, args.test_speakers, args.train_duration_max, args.test_duration_max)
     elif args.transfer_mode == 'npy':
         fetch_from_npy(args.npy_train_source, args.npy_test_source,args.data_cache, args.sampling_rate)
     elif args.transfer_mode == 'codec':
