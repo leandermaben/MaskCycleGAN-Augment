@@ -14,7 +14,7 @@
     "transfer_mode":"audio",
     "use_genders":["M","F"],
     "codec_name":"codec2",
-    "codec2_bitrate":3200,
+    "codec2_bitrate":450,
     "train_speakers":["fe_03_1522-02147", "fe_03_2141-01326", "fe_03_3425-00177","fe_03_1678-00558"],
     "test_speakers": ["fe_03_3720-01342"],
     "train_duration_max":300,
