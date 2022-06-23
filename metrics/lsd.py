@@ -12,19 +12,12 @@ import os
 import soundfile as sf
 import shutil
 import pandas as pd
-#from timeit import default_timer as timer
 import json
-
+ 
 #Loading defaults
 
 with open('defaults.json','r') as f:
     defaults = json.load(f)
-
-RESULTS_DEFAULT = defaults['test_results']
-SOURCE_DEFAULT = defaults['test_source']
-CSV_PATH_DEFAULT = defaults['annotations']
-USE_GENDER =defaults['use_gender_test']
-
 
 def calc_LSD_spectrogram(a, b):
     """
@@ -47,7 +40,7 @@ def calc_LSD_spectrogram(a, b):
 
 
 def AddNoiseFloor(data):
-    frameSz = 128
+    frameSz = defaults["fix_w"]
     noiseFloor = (np.random.rand(frameSz) - 0.5) * 1e-5
     numFrame = math.floor(len(data)/frameSz)
     st = 0
@@ -63,9 +56,9 @@ def AddNoiseFloor(data):
 
 
 def time_and_energy_align(data1, data2, sr):
-    nfft = 256
-    hop_length = 1  # hop_length = win_length or frameSz - overlapSz
-    win_length = 256
+    nfft = defaults["nfft"]
+    hop_length = defaults["align_hop"]  # hop_length = win_length or frameSz - overlapSz
+    win_length = defaults["align_win_len"]
 
     ##Adding small random noise to prevent -Inf problem with Spec
     data1 = AddNoiseFloor(data1)
@@ -182,10 +175,10 @@ def normalize(sig1, sig2):
 
 
 def norm_and_LSD(file1, file2):
-    nfft = 256
-    overlapSz = 128
-    frameSz = 256
-    eps = 1e-9
+    nfft = defaults["nfft"]
+    overlapSz = defaults["norm_overlap"]
+    frameSz = defaults["norm_frameSz"]
+    eps = defaults["lsd_eps"]
 
     #normalizing
     
@@ -221,14 +214,14 @@ def norm_and_LSD(file1, file2):
     print("LSD (Spectrogram) between %s, %s = %f" % (file1, file2, calc_LSD_spectrogram(a, b)))
     return calc_LSD_spectrogram(a, b)
 
-def main(source_dir=SOURCE_DEFAULT,results_dir=RESULTS_DEFAULT):
+def main(source_dir=defaults["test_source"],results_dir=defaults["test_results"], use_gender = defaults["use_gender_test"],csv_path=defaults["annotations"]):
 
     """
     Modified by Leander Maben.
     
     """
     annotations = {}
-    anno_csv = pd.read_csv(CSV_PATH_DEFAULT)
+    anno_csv = pd.read_csv(csv_path)
     for i in range(len(anno_csv)):
         row=anno_csv.iloc[i]
         annotations[row['file']]=row['gender']
@@ -249,7 +242,7 @@ def main(source_dir=SOURCE_DEFAULT,results_dir=RESULTS_DEFAULT):
 
     if file1_rate!=file2_rate:
         ## Storing original audios in a new temp cache with desired sample_rate
-        TEMP_CACHE = '/content/temp'
+        TEMP_CACHE = defaults["metrics_temp_cache"]
         os.makedirs(TEMP_CACHE)
         for file in os.listdir(source_dir):
             file1 = os.path.join(source_dir,file)
@@ -271,7 +264,7 @@ def main(source_dir=SOURCE_DEFAULT,results_dir=RESULTS_DEFAULT):
         if min_lsd==lsd:
             min_file=file
 
-        if USE_GENDER:
+        if use_gender:
             if annotations[file] == 'M':
                 male_loss.append(lsd)
 
@@ -280,11 +273,9 @@ def main(source_dir=SOURCE_DEFAULT,results_dir=RESULTS_DEFAULT):
         total_loss.append(lsd)
 
 
-    
-
     total_mean = np.mean(total_loss)
     total_std = np.std(total_loss)
-    if USE_GENDER:
+    if use_gender:
         male_mean = np.mean(male_loss)
         male_std = np.std(male_loss)
         female_mean = np.mean(female_loss)
@@ -298,7 +289,7 @@ def main(source_dir=SOURCE_DEFAULT,results_dir=RESULTS_DEFAULT):
     if TEMP_CACHE!=source_dir:
         shutil.rmtree(TEMP_CACHE)
 
-    if USE_GENDER:
+    if use_gender:
         return total_mean, total_std, male_mean, male_std, female_mean, female_std
     else:
         return total_mean, total_std
