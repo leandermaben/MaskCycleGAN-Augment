@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import shutil
 import sys
-from metrics.evaluate_lsd import main as lsd
+from metrics.lsd import main as lsd
 from metrics.mssl import main as mssl
 
 def run(command):
