@@ -27,7 +27,7 @@ def validate(name, epochs, data_cache, results_dir):
     min_mssl_epoch=-1
 
     for epoch in epochs:
-        run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.test --name {name} --split val --save_dir {results_dir} --gpu_ids 0 --speaker_A_id clean --speaker_B_id noisy --ckpt_dir /content/drive/MyDrive/APSIPA/Results/{name}/ckpts --load_epoch {epoch} --model_name generator_A2B')
+        run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.test --name {name} --split val --save_dir {results_dir} --gpu_ids 0 --speaker_A_id clean --speaker_B_id noisy --ckpt_dir /content/drive/MyDrive/APSIPA/Results/{name}/ckpts  --model_name generator_A2B --load_epoch {epoch}')
         avg_lsd,std_lsd = lsd(os.path.join(data_cache,'noisy','val'),os.path.join(results_dir,name,'audios','fake_B'),use_gender=False)
         avg_mssl,std_mssl = mssl(os.path.join(data_cache,'noisy','val'),os.path.join(results_dir,name,'audios','fake_B'),use_gender=False)
 
@@ -59,7 +59,7 @@ def apsipa_exp(names,csv_path,sources, data_cache='/content/MaskCycleGAN-Augment
         print('#'*25)
         print(f'Training {name} with Data from {source}')
         shutil.copytree(os.path.join('/content/drive/MyDrive/APSIPA/Data_Sources',source),data_cache)
-        run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.train --name {name} --seed 0 --save_dir /content/drive/MyDrive/APSIPA/Results --speaker_A_id clean --speaker_B_id noisy --epochs_per_save 25 --epochs_per_plot 10 --num_epochs 150 --batch_size 8 --decay_after 1e4 --sample_rate 8000 --num_frames 64 --max_mask_len 50 --gpu_ids 0 --generator_lr 5e-4 --discriminator_lr 5e-4 --preprocess resize')
+        #run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.train --name {name} --seed 0 --save_dir /content/drive/MyDrive/APSIPA/Results --speaker_A_id clean --speaker_B_id noisy --epochs_per_save 25 --epochs_per_plot 10 --num_epochs 150 --batch_size 8 --decay_after 1e4 --sample_rate 8000 --num_frames 64 --max_mask_len 50 --gpu_ids 0 --generator_lr 5e-4 --discriminator_lr 5e-4 --preprocess resize')
         
         info = validate(name, epochs, data_cache, results_dir)
         for metric in ['min_lsd_epoch','min_mssl_epoch']:
@@ -79,7 +79,7 @@ def apsipa_exp(names,csv_path,sources, data_cache='/content/MaskCycleGAN-Augment
 
         info['name'] = name
         info['comment'] = f'MaskCycleGAN trained for 150 epochs, WITHOUT phase on {source} dataset.'
-        log(csv_path, info)
+        #log(csv_path, info)
 
         shutil.rmtree(data_cache)
         print(f'Finished experiment with {name}')
@@ -93,6 +93,6 @@ if __name__ == '__main__':
         df.to_csv(csv_path,index=False)
     
 
-    sources = ['Non-Parallel/TIMIT_Helicopter','Non-Parallel/TIMIT_Cabin','Non-Parallel/Codec2']
-    apsipa_exp([f'MaskCycleGAN_{i}' for i in ['np_helicopter','np_cabin','np_cd2']],csv_path,sources)
+    sources = ['Non-Parallel/TIMIT_Helicopter']
+    apsipa_exp([f'MaskCycleGAN_{i}' for i in ['np_helicopter']],csv_path,sources)
     
