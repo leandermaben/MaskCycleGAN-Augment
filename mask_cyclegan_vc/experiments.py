@@ -27,7 +27,7 @@ def validate(name, epochs, data_cache, results_dir):
     min_mssl_epoch=-1
 
     for epoch in epochs:
-        run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.test --name {name} --split val --save_dir results --gpu_ids 0 --speaker_A_id clean --speaker_B_id noisy --ckpt_dir /content/drive/MyDrive/APSIPA/Results/{name}/ckpts --load_epoch {epoch} --model_name generator_A2B')
+        run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.test --name {name} --split val --save_dir {results_dir} --gpu_ids 0 --speaker_A_id clean --speaker_B_id noisy --ckpt_dir /content/drive/MyDrive/APSIPA/Results/{name}/ckpts --load_epoch {epoch} --model_name generator_A2B')
         avg_lsd,std_lsd = lsd(os.path.join(data_cache,'noisy','val'),os.path.join(results_dir,name,'audios','fake_B'),use_gender=False)
         avg_mssl,std_mssl = mssl(os.path.join(data_cache,'noisy','val'),os.path.join(results_dir,name,'audios','fake_B'),use_gender=False)
 
@@ -48,21 +48,51 @@ def validate(name, epochs, data_cache, results_dir):
         
     info['min_val_lsd'] = min_lsd
     info['min_val_mssl'] = min_mssl
-    info['min_val_lsd_epoch'] = min_lsd_epoch
-    info['min_val_mssl_epoch'] = min_mssl_epoch
+    info['min_lsd_epoch'] = min_lsd_epoch
+    info['min_mssl_epoch'] = min_mssl_epoch
 
     return info
 
 
-def apsipa_exp(names,csv_path,sources, data_cache='/content/AttentionGAN-VC/data_cache',results_dir='/content/AttentionGAN-VC/results'):
+def apsipa_exp(names,csv_path,sources, data_cache='/content/MaskCycleGAN-Augment/data_cache',results_dir='/content/MaskCycleGAN-Augment/results', epochs = [25,50,75,100,125,150]):
      for name, source in zip(names,sources):
         print('#'*25)
         print(f'Training {name} with Data from {source}')
         shutil.copytree(os.path.join('/content/drive/MyDrive/APSIPA/Data_Sources',source),data_cache)
-        run(f'python train.py --dataroot data_cache --name {name} --model attention_gan --dataset_mode audio --pool_size 50 --no_dropout --norm instance --lambda_A 10 --lambda_B 10 --lambda_identity 0.5 --load_size_h 128 --load_size_w 128 --crop_size 128 --preprocess resize --batch_size 4 --niter 200 --niter_decay 0 --gpu_ids 0 --display_id 0 --display_freq 100 --print_freq 100 --input_nc 1 --output_nc 1 --use_cycled_discriminators --use_mask --max_mask_len 50 --checkpoints_dir /content/drive/MyDrive/APSIPA/Results/checkpoints --no_html')
+        run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.train --name {name} --seed 0 --save_dir /content/drive/MyDrive/APSIPA/Results --speaker_A_id clean --speaker_B_id noisy --epochs_per_save 25 --epochs_per_plot 10 --num_epochs 150 --batch_size 8 --decay_after 1e4 --sample_rate 8000 --num_frames 64 --max_mask_len 50 --gpu_ids 0 --generator_lr 5e-4 --discriminator_lr 5e-4 --preprocess resize')
         
-        
-        log(csv_path, name,f'Training {name} with Dataet source {source} for 200 epochs with cycled_disc, WITHOUT phase and WITH mask. LambdaA & B 10 , lambda_identity 0.5',avg_lsd,std_lsd,avg_mssl,std_mssl)
+        info = validate(name, epochs, data_cache, results_dir)
+        for metric in ['min_lsd_epoch','min_mssl_epoch']:
+            epoch = info[metric]
+            run(f'python -W ignore::UserWarning -m mask_cyclegan_vc.test --name {name} --split test --save_dir {results_dir} --gpu_ids 0 --speaker_A_id clean --speaker_B_id noisy --ckpt_dir /content/drive/MyDrive/APSIPA/Results/{name}/ckpts --load_epoch {epoch} --model_name generator_A2B')
+            info['avg_lsd_{metric}'],info['std_lsd_{metric}'] = lsd(os.path.join(data_cache,'noisy','test'),os.path.join(results_dir,name,'audios','fake_B'),use_gender=False)
+            info['avg_mssl_{metric}'],info['std_mssl_{metric}'] = mssl(os.path.join(data_cache,'noisy','test'),os.path.join(results_dir,name,'audios','fake_B'),use_gender=False)
+
+            shutil.rmtree(os.path.join(results_dir,name,'audios','fake_B'))
+
+            if info['min_mssl_epoch'] == info['min_lsd__epoch']:
+                info['avg_lsd_min_mssl_epoch'] = info['avg_lsd_min_lsd_epoch']
+                info['std_lsd_min_mssl_epoch'] = info['std_lsd_min_lsd_epoch']
+                info['avg_mssl_min_mssl_epoch'] = info['avg_mssl_min_lsd_epoch']
+                info['std_mssl_min_mssl_epoch'] = info['std_mssl_min_lsd_epoch']
+                break
+
+        info['name'] = name
+        info['comment'] = f'MaskCycleGAN trained for 150 epochs, WITHOUT phase on {source} dataset.'
+        log(csv_path, info)
+
         shutil.rmtree(data_cache)
         print(f'Finished experiment with {name}')
         print('#'*25)
+
+if __name__ == '__main__':
+    csv_path = '/content/drive/MyDrive/APSIPA/Results/logs.csv'
+    if not os.path.exists(csv_path):
+        cols=['name','comment','min_lsd_epoch','min_mssl_epoch','avg_test_lsd_min_lsd_epoch','avg_test_mssl_min_lsd_epoch',	'avg_test_lsd_min_mssl_epoch','avg_test_mssl_min_mssl_epoch','min_val_lsd','min_val_mssl','std_test_lsd_min_lsd_epoch','std_test_mssl_min_lsd_epoch','std_test_lsd_min_mssl_epoch',	'std_test_mssl_min_mssl_epoch','avg_val_lsd','avg_val_mssl','std_val_lsd','std_val_mssl']
+        df=pd.DataFrame(columns=cols)
+        df.to_csv(csv_path,index=False)
+    
+
+    sources = ['Non-Parallel/TIMIT_Helicopter','Non-Parallel/TIMIT_Cabin','Non-Parallel/Codec2']
+    apsipa_exp([f'MaskCycleGAN_{i}' for i in ['np_helicopter','np_cabin','np_cd2']],csv_path,sources)
+    
